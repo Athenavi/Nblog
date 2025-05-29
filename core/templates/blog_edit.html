@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑文章 - nblog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#6366f1',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        dark: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .markdown-toolbar {
+            background-color: #f3f4f6;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+
+        .editor-container {
+            min-height: 400px;
+        }
+
+        .preview-container {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            min-height: 400px;
+        }
+
+        .tag {
+            transition: all 0.2s;
+        }
+
+        .tag:hover {
+            transform: translateY(-2px);
+        }
+
+        .tag-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+<!-- 导航栏 -->
+{% include "nav.html" %}
+<!-- 主内容区 -->
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <!-- 表单区域 -->
+    <form method="post">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 左侧 - 主内容 -->
+            <div class="lg:col-span-2">
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            {{ article.title }}
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <!-- 标题 -->
+                        <div class="mb-6">
+                            <label for="title" class="block text-sm font-medium text-gray-700 mb-1">文章标题</label>
+                            <input type="text" id="title" name="title"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                   placeholder="输入文章标题" value="{{ article.title }}">
+                        </div>
+
+                        <!-- 标签 -->
+                        <div class="mb-6">
+                            <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">文章标签</label>
+                            <div class="flex flex-wrap gap-2 mb-2">
+                                {% for tag in tags_list %}
+                                    <span class="tag bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center">
+                                            {{ tag }} <button type="button"
+                                                              class="ml-1 text-blue-600 hover:text-blue-800"><i
+                                            class="fas fa-times"></i></button>
+                                        </span>
+                                {% endfor %}
+                            </div>
+                            <div class="flex">
+                                <input type="text" id="tags" name="tags"
+                                       class="tag-input block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                       placeholder="添加新标签（用逗号分隔）" value="{{ article.tags }}">
+                            </div>
+                        </div>
+
+                        <!-- Markdown编辑器 -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">文章内容</label>
+                            <!-- 工具栏不变 -->
+                            <textarea id="content" name="content" rows="20"
+                                      class="mt-1 block w-full border border-t-0 border-gray-300 rounded-b-md shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-4 font-mono"
+                                      placeholder="在此输入Markdown格式的文章内容...">{{ content.content }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 右侧 - 设置区域 -->
+            <div class="lg:col-span-1">
+                <!-- 发布设置卡片 -->
+                <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            发布设置
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">文章状态</label>
+                            <div class="flex space-x-4">
+                                {% if status_choices %}
+                                    {% for value, label in status_choices %}
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="status" value="{{ value }}"
+                                                   class="text-primary focus:ring-primary"
+                                                   {% if article.status == value %}checked{% endif %}>
+                                            <span class="ml-2">{{ label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                {% else %}
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="status" value="Draft" checked
+                                               class="text-primary focus:ring-primary">
+                                        <span class="ml-2">草稿</span>
+                                    </label>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if status_choices %}
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">作者</label>
+                                    <p class="text-gray-900">{{ article.user.username }}</p>
+                                </div>
+                                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <span class="text-blue-800 font-medium">{{ article.user.username|first }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="flex justify-between">
+                            {% if status_choices %}
+                                <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                                    <i class="fas fa-eye text-blue-600 text-xl">{{ article.views }}</i>
+                                </div>
+                                <div class="flex-shrink-0 bg-red-100 rounded-md p-3">
+                                    <i class="fas fa-heart text-red-600 text-xl">{{ article.likes }}</i>
+                                </div>
+                                <button type="button"
+                                        class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                    <i class="far fa-eye mr-2"></i> 预览
+                                </button>
+                            {% endif %}
+                            <button type="submit"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <i class="fas fa-save mr-2"></i> 保存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 文章属性卡片 -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            文章属性
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <label for="article_type"
+                                   class="block text-sm font-medium text-gray-700 mb-1">文章类型</label>
+                            <select id="article_type" name="article_type"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+                                {% for type in article_types %}
+                                    <option value="{{ type }}"
+                                            {% if article.article_type == type %}selected{% endif %}>{{ type }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="article_pass"
+                                   class="block text-sm font-medium text-gray-700 mb-1">文章密码（5-20个字符）</label>
+                            <input type="password" id="article_pass" name="blog_password"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                   minlength="5" maxlength="20" placeholder="{{ current_password }}">
+                        </div>
+                        <div>
+                            <label for="cover_image"
+                                   class="block text-sm font-medium text-gray-700 mb-1">封面图片</label>
+                            <div class="mt-1 flex items-center">
+                                    <span class="inline-block h-16 w-16 rounded-md overflow-hidden bg-gray-100">
+                                        {% if article.cover_image %}
+                                            <img src="{{ article.cover_image }}" alt="封面预览"
+                                                 class="h-full w-full object-cover">
+                                        {% else %}
+                                            <div class="h-full w-full bg-gray-200 flex items-center justify-center">
+                                                <i class="fas fa-image text-gray-400"></i>
+                                            </div>
+                                        {% endif %}
+                                    </span>
+                                <button type="button"
+                                        class="ml-4 inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                    更换图片
+                                </button>
+                            </div>
+                            <input type="text" id="cover_image" name="cover_image"
+                                   class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                   placeholder="输入图片URL" value="{{ article.cover_image|default:'' }}">
+                        </div>
+
+                        <div>
+                            <label for="excerpt"
+                                   class="block text-sm font-medium text-gray-700 mb-1">文章摘要</label>
+                            <textarea id="excerpt" name="excerpt" rows="3"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                      placeholder="输入文章摘要">{{ article.excerpt }}</textarea>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="relative flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input id="is_featured" name="is_featured" type="checkbox"
+                                           class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                           {% if article.is_featured %}checked{% endif %}>
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="is_featured"
+                                           class="font-medium text-gray-700">推荐文章</label>
+                                    <p class="text-gray-500">在首页和推荐位置显示此文章</p>
+                                </div>
+                            </div>
+
+                            <div class="relative flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input id="hidden" name="hidden" type="checkbox"
+                                           class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                           {% if article.hidden %}checked{% endif %}>
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="hidden" class="font-medium text-gray-700">隐藏文章</label>
+                                    <p class="text-gray-500">只有管理员和所有者可以查看此文章</p>
+                                </div>
+                            </div>
+
+                            <div class="relative flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input id="hidden" name="hidden" type="checkbox"
+                                           class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                           {% if article.locked %}checked{% endif %}>
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="hidden" class="font-medium text-gray-700">加密文章</label>
+                                    <p class="text-gray-500">开启此选项时密码生效</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% include "footer.html" %}
+</body>
+</html>

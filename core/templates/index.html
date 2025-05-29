@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章列表 | nblog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .article-card {
+            transition: all 0.3s ease;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .tag {
+            transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+            transform: scale(1.05);
+        }
+
+        .pagination-btn:hover {
+            background-color: #e2e8f0;
+        }
+
+        mark {
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        .search-highlight {
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        .skeleton {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .featured-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .stats-item {
+            transition: all 0.2s ease;
+        }
+
+        .stats-item:hover {
+            color: #3b82f6;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<!-- 导航栏 -->
+{% include "nav.html" %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-dark mb-2">文章列表</h1>
+            <p class="text-gray-600">共 <span id="article-count" class="font-semibold">12</span> 篇文章</p>
+        </div>
+
+        <div class="mt-4 md:mt-0 w-full md:w-auto">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative">
+                    <input id="search-input" type="text" placeholder="搜索文章..."
+                           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 shadow-sm">
+                    <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                </div>
+                <select id="filter-select"
+                        class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm bg-white">
+                    <option value="all">全部</option>
+                    <option value="featured">推荐</option>
+                    <option value="popular">热度</option>
+                </select>
+            </div>
+            <p id="search-status" class="text-sm text-gray-500 mt-2 ml-1 hidden">
+                <i class="fas fa-info-circle mr-1"></i><span>正在搜索...</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- 筛选标签 -->
+    <div id="active-filters" class="flex flex-wrap gap-2 mb-6">
+        <!-- 动态生成的活动筛选标签 -->
+    </div>
+
+    <!-- 无结果提示 -->
+    <div id="no-results" class="hidden bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center mb-8">
+        <div class="text-5xl text-gray-300 mb-4">
+            <i class="fas fa-file-alt"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">没有找到符合条件的文章</h3>
+        <p class="text-gray-500">尝试调整搜索关键词或筛选条件</p>
+    </div>
+    <!-- 文章列表 -->
+    <div id="articles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 文章卡片将通过JavaScript动态生成 -->
+    </div>
+    <!-- 分页控件 -->
+    <div class="mt-12 flex flex-col sm:flex-row justify-between items-center py-4 border-t border-gray-200">
+        <p class="text-gray-600 mb-4 sm:mb-0">当前页: <span class="font-semibold">{{ current_page }}</span> / 总页数:
+            <span class="font-semibold">{{ total_pages }}</span></p>
+
+        <div class="flex space-x-2">
+            <button class="pagination-btn px-4 py-2 rounded-md border text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    {% if current_page == 1 %}disabled{% endif %}>
+                <i class="fas fa-chevron-left mr-2"></i>上一页
+            </button>
+            <button class="pagination-btn px-4 py-2 rounded-md border text-gray-600 hover:bg-gray-100 transition-colors"
+                    {% if current_page == total_pages %}disabled{% endif %}>
+                下一页<i class="fas fa-chevron-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+</div>
+<!-- 页脚 -->
+{% include "footer.html" %}
+<script>
+    // 全局文章数据
+    let allArticles = [];
+
+    // DOM元素
+    const articlesContainer = document.getElementById('articles-container');
+    const articleCount = document.getElementById('article-count');
+    const filterSelect = document.getElementById('filter-select');
+    const searchInput = document.getElementById('search-input');
+    const noResultsElement = document.getElementById('no-results');
+    const searchStatus = document.getElementById('search-status');
+    const activeFilters = document.getElementById('active-filters');
+
+    // 防抖函数
+    function debounce(func, delay) {
+        let timer;
+        return function () {
+            const context = this;
+            const args = arguments;
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                func.apply(context, args);
+            }, delay);
+        };
+    }
+
+    // 高亮关键词
+    function highlightText(text, keyword) {
+        if (!keyword) return text;
+
+        const regex = new RegExp(keyword, 'gi');
+        return text.replace(regex, match => `<mark class="search-highlight">${match}</mark>`);
+    }
+
+    // 更新活动筛选标签
+    function updateActiveFilters() {
+        const filterValue = filterSelect.value;
+        const searchTerm = searchInput.value.trim();
+
+        activeFilters.innerHTML = '';
+
+        // 添加搜索标签
+        if (searchTerm) {
+            const searchTag = document.createElement('div');
+            searchTag.className = 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center text-sm';
+            searchTag.innerHTML = `
+                <span>搜索: ${searchTerm}</span>
+                <button class="ml-2 text-blue-600 hover:text-blue-800" onclick="clearSearch()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            activeFilters.appendChild(searchTag);
+        }
+
+        // 添加筛选标签
+        if (filterValue !== 'all') {
+            const filterText = filterValue === 'featured' ? '推荐' : '热度';
+            const filterTag = document.createElement('div');
+            filterTag.className = 'bg-green-100 text-green-800 px-3 py-1 rounded-full flex items-center text-sm';
+            filterTag.innerHTML = `
+                <span>筛选: ${filterText}</span>
+                <button class="ml-2 text-green-600 hover:text-green-800" onclick="clearFilter()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            activeFilters.appendChild(filterTag);
+        }
+    }
+
+    // 渲染文章列表
+    function renderArticles(articlesToRender) {
+        // 更新文章数量
+        articleCount.textContent = articlesToRender.length;
+
+        // 显示/隐藏无结果提示
+        if (articlesToRender.length === 0) {
+            noResultsElement.classList.remove('hidden');
+        } else {
+            noResultsElement.classList.add('hidden');
+        }
+
+        // 清空容器
+        articlesContainer.innerHTML = '';
+
+        // 获取当前搜索关键词
+        const searchTerm = searchInput.value.trim().toLowerCase();
+
+        // 更新活动筛选标签
+        updateActiveFilters();
+
+        // 渲染每篇文章
+        articlesToRender.forEach(article => {
+            const articleElement = document.createElement('div');
+            articleElement.className = 'article-card bg-white rounded-xl shadow-md overflow-hidden';
+
+            // 状态标签样式
+            let statusClass, statusText;
+            if (article.status === "published") {
+                statusClass = 'bg-green-100 text-green-800';
+                statusText = '已发布';
+            } else if (article.status === "draft") {
+                statusClass = 'bg-yellow-100 text-yellow-800';
+                statusText = '草稿';
+            } else if (article.status === "pending") {
+                statusClass = 'bg-blue-100 text-blue-800';
+                statusText = '审核中';
+            } else if (article.status === "hidden") {
+                statusClass = 'bg-gray-100 text-gray-800';
+                statusText = '已隐藏';
+            } else {
+                // 默认状态
+                statusClass = 'bg-gray-100 text-gray-800';
+                statusText = article.status || '未知状态';
+            }
+
+            // 应用高亮
+            const highlightedTitle = highlightText(article.title, searchTerm);
+            const highlightedExcerpt = highlightText(article.excerpt, searchTerm);
+
+            articleElement.innerHTML = `
+    <div class="relative">
+        ${article.cover_image ?
+                `<img src="${article.cover_image}" alt="文章封面" class="w-full h-48 object-cover">` :
+                `<div class="bg-gradient-to-br from-gray-200 to-gray-300 w-full h-48"></div>`
+            }
+        ${article.is_featured ?
+                `<div class="featured-badge">推荐</div>` :
+                ''
+            }
+    </div>
+    <div class="p-6">
+        <div class="flex justify-between items-start mb-4">
+            <h2 class="text-xl font-bold text-dark hover:text-primary cursor-pointer" onclick="location.href='/blog/${article.id}'">${highlightedTitle}</h2>
+            <span class="status-badge ${statusClass}">${statusText}</span>
+        </div>
+        <p class="text-gray-600 text-sm mb-4">${highlightedExcerpt}</p>
+        ${article.tags ?
+                `<div class="flex flex-wrap gap-2 mb-4">
+            ${article.tags.split(',').map(tag =>
+                    `<span class="tag bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">${tag.trim()}</span>`
+                ).join('')}
+        </div>` :
+                ''
+            }
+        <div class="flex justify-between items-center text-sm text-gray-500 mb-4">
+            <div class="flex items-center">
+                ${article.user ?
+                `<div class="bg-gradient-to-r from-blue-400 to-indigo-500 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2">${article.user.charAt(0)}</div>
+                    <span>${article.user}</span>` :
+                `<div class="bg-gradient-to-r from-blue-400 to-indigo-500 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2">无名</div>
+                    <span>未知作者</span>`
+            }
+            </div>
+            <span>${article.created_at || '未知日期'}</span>
+        </div>
+        <div class="flex justify-between pt-4 border-t border-gray-100">
+            <div class="stats-item flex items-center text-gray-500">
+                <i class="far fa-eye mr-1"></i>
+                <span>${(article.views !== undefined && article.views !== null) ? article.views.toLocaleString() : '0'}</span>
+            </div>
+            <div class="stats-item flex items-center text-gray-500">
+                <i class="far fa-heart mr-1"></i>
+                <span>${(article.likes !== undefined && article.likes !== null) ? article.likes.toLocaleString() : '0'}</span>
+            </div>
+            <div class="stats-item flex items-center text-gray-500">
+                <i class="far fa-comment mr-1"></i>
+                <span>${(article.comments !== undefined && article.comments !== null) ? article.comments.toLocaleString() : '0'}</span>
+            </div>
+        </div>
+    </div>
+`;
+
+            articlesContainer.appendChild(articleElement);
+        });
+    }
+
+    // 筛选和搜索文章
+    function filterAndSearchArticles() {
+        // 显示搜索状态
+        searchStatus.classList.remove('hidden');
+        searchStatus.querySelector('span').textContent = '正在搜索...';
+
+        const filterValue = filterSelect.value;
+        const searchTerm = searchInput.value.trim().toLowerCase();
+
+        // 首先根据筛选条件处理
+        let filteredArticles = [...allArticles];
+
+        if (filterValue === 'featured') {
+            filteredArticles = filteredArticles.filter(article => article.is_featured);
+        } else if (filterValue === 'popular') {
+            // 热度排序：浏览量占70%，点赞量占30%
+            filteredArticles.sort((a, b) => {
+                const scoreA = (a.views * 0.7) + (a.likes * 0.3);
+                const scoreB = (b.views * 0.7) + (b.likes * 0.3);
+                return scoreB - scoreA;
+            });
+        }
+
+        // 然后根据搜索关键词过滤
+        if (searchTerm) {
+            filteredArticles = filteredArticles.filter(article => {
+                return article.title.toLowerCase().includes(searchTerm) ||
+                    article.excerpt.toLowerCase().includes(searchTerm);
+            });
+        }
+
+        // 渲染结果
+        renderArticles(filteredArticles);
+
+        // 更新搜索状态
+        if (searchTerm) {
+            searchStatus.querySelector('span').textContent = `找到 ${filteredArticles.length} 篇相关文章`;
+        } else {
+            searchStatus.classList.add('hidden');
+        }
+    }
+
+    // 清除搜索
+    function clearSearch() {
+        searchInput.value = '';
+        filterAndSearchArticles();
+    }
+
+    // 清除筛选
+    function clearFilter() {
+        filterSelect.value = 'all';
+        filterAndSearchArticles();
+    }
+
+    // 初始化页面
+    function initPage(articles) {
+        allArticles = articles;
+
+        // 初始渲染
+        renderArticles(articles);
+
+        // 绑定事件
+        filterSelect.addEventListener('change', filterAndSearchArticles);
+
+        // 使用防抖函数包装搜索功能
+        const debouncedSearch = debounce(filterAndSearchArticles, 300);
+        searchInput.addEventListener('input', debouncedSearch);
+
+        // 初始化文章数量
+        articleCount.textContent = articles.length;
+    }
+
+    // 页面加载完成后初始化
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // 模拟文章数据
+    function mockArticles() {
+        return [
+            {
+                id: 1,
+                title: "深入理解JavaScript闭包",
+                excerpt: "闭包是JavaScript中一个重要的概念，它允许函数访问并操作函数外部的变量。",
+                cover_image: "https://picsum.photos/600/400?random=1",
+                is_featured: true,
+                status: "published",
+                tags: "JavaScript,编程,前端",
+                user: "张三",
+                created_at: "2023-08-15",
+                views: 1254,
+                likes: 86,
+                comments: 24
+            }
+        ];
+    }
+
+    // 页面加载完成后初始化
+    async function fetchArticles() {
+        try {
+            // 获取CSRF令牌
+            const csrftoken = getCookie('csrftoken');
+
+            const response = await fetch('/?page={{ current_page }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken  // 关键：添加CSRF令牌头
+                },
+                body: JSON.stringify({}),
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error(`服务器响应错误: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('文章数据:', data);
+            return data.articles;
+        } catch (error) {
+            console.error('获取文章数据时出错:', error);
+            return [];
+        }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // 使用模拟数据初始化页面
+        //const articles = mockArticles();
+        //initPage(articles);
+
+        // 实际项目中应使用下面的代码从服务器获取数据
+        fetchArticles().then(articles => {
+            initPage(articles);
+        });
+    });
+</script>
+</body>
+</html>

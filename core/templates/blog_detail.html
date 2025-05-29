@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ meta.title }}</title>
+    <!-- 引入 Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
+        <div class="md:flex">
+            <div class="md:flex-shrink-0">
+            </div>
+            <div class="p-8">
+                <a href="#"
+                   class="block mt-1 text-lg leading-tight font-medium text-black hover:underline">{{ meta.title }}</a>
+                <p class="mt-2 text-gray-500">
+                    {{ content|safe }}
+                </p>
+                <div class="mt-4 text-sm text-gray-500">
+                    作者: {{ meta.user }} | 发布日期: {{ meta.created_at }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
