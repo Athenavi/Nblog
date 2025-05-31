@@ -7,7 +7,7 @@ from .models import BlogMeta, BlogContent, Media
 
 
 def index(request):
-    articles, total_pages, current_page = BlogMeta.get_paged_articles(request)
+    articles, total_pages, current_page, page_size = BlogMeta.get_paged_articles(request)
 
     if request.method == 'POST':
         # 处理搜索请求
@@ -18,7 +18,11 @@ def index(request):
         'articles': articles,
         'total_pages': total_pages,
         'current_page': current_page,
+        'next_page': current_page + 1 if current_page < total_pages else current_page,
+        'prev_page': current_page - 1 if current_page > 1 else current_page,
+        'page_size': page_size,
     }
+
     return render(request, 'index.html', context)
 
 

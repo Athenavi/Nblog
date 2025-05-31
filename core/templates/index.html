@@ -120,15 +120,19 @@
     </div>
     <!-- 分页控件 -->
     <div class="mt-12 flex flex-col sm:flex-row justify-between items-center py-4 border-t border-gray-200">
-        <p class="text-gray-600 mb-4 sm:mb-0">当前页: <span class="font-semibold">{{ current_page }}</span> / 总页数:
-            <span class="font-semibold">{{ total_pages }}</span></p>
+        <p class="text-gray-600 mb-4 sm:mb-0">当前页: <span class="font-semibold"
+                                                            id="current-page">{{ current_page }}</span> / 总页数:
+            <span class="font-semibold" id="total-pages">{{ total_pages }}</span></p>
 
         <div class="flex space-x-2">
             <button class="pagination-btn px-4 py-2 rounded-md border text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    onclick="loadArticles({{ prev_page }}, {{ page_size }})"
                     {% if current_page == 1 %}disabled{% endif %}>
                 <i class="fas fa-chevron-left mr-2"></i>上一页
             </button>
+
             <button class="pagination-btn px-4 py-2 rounded-md border text-gray-600 hover:bg-gray-100 transition-colors"
+                    onclick="loadArticles({{ next_page }}, {{ page_size }})"
                     {% if current_page == total_pages %}disabled{% endif %}>
                 下一页<i class="fas fa-chevron-right ml-2"></i>
             </button>
@@ -386,6 +390,7 @@
     }
 
     // 页面加载完成后初始化
+    // 页面加载完成后初始化
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -422,12 +427,12 @@
     }
 
     // 页面加载完成后初始化
-    async function fetchArticles() {
+    async function fetchArticles(page, pageSize) {
         try {
             // 获取CSRF令牌
             const csrftoken = getCookie('csrftoken');
 
-            const response = await fetch('/?page={{ current_page }}', {
+            const response = await fetch(`/?page=${page}&page_size=${pageSize}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -450,6 +455,14 @@
         }
     }
 
+    // 加载文章并更新页面
+    async function loadArticles(page, pageSize) {
+        const articles = await fetchArticles(page, pageSize);
+        initPage(articles);
+        document.getElementById('current-page').innerText = page;
+        // 如果你需要更新 total_pages，也可以在这里进行
+        // document.getElementById('total-pages').innerText = data.total_pages;
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         // 使用模拟数据初始化页面
@@ -457,7 +470,7 @@
         //initPage(articles);
 
         // 实际项目中应使用下面的代码从服务器获取数据
-        fetchArticles().then(articles => {
+        fetchArticles({{ current_page }}, {{ page_size }}).then(articles => {
             initPage(articles);
         });
     });

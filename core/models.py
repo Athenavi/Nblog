@@ -125,7 +125,7 @@ class BlogMeta(models.Model):
             }
             articles_list.append(article_info)
 
-        return articles_list, paginator.num_pages, page_obj.number
+        return articles_list, paginator.num_pages, page_obj.number,page_size
 
 
 class BlogContent(models.Model):
