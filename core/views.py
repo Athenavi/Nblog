@@ -61,7 +61,15 @@ def comment_add(request, blog_id):
         content = request.POST.get('comment-text')
         user = request.user
         article = get_object_or_404(BlogMeta, id=blog_id)
-        comment = Comment(article=article, user=user, content=content)
+        user_ip = request.META.get('REMOTE_ADDR')
+        user_ua = request.META.get('HTTP_USER_AGENT')
+        comment_content_json = {
+            "reply_to": request.POST.get('reply-to') or 0,
+            "content": content,
+            "ip": user_ip,
+            "ua": user_ua
+        }
+        comment = Comment(article=article, user=user, content=comment_content_json)
         comment.save()
         return redirect('blog_detail', blog_id=blog_id)
     else:

@@ -29,6 +29,8 @@
             </button>
         </form>
     </div>
+    {% load custom_filters %}
+
     <!-- 显示评论 -->
     <div id="comments" class="mt-8 bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-medium mb-4">评论</h3>
@@ -37,7 +39,10 @@
                 {% for comment in comments %}
                     <li class="flex items-center space-x-2">
                         <strong class="text-gray-800">{{ comment.user.username }}</strong>
-                        <span class="text-gray-500">: {{ comment.content }}</span>
+                        <p>内容: {{ comment.content|parse_json|get_item:'content'|safe }}</p>
+                        <p>{{ comment.content|parse_json|get_item:'ip' }}</p>
+                        <p>{{ comment.content|parse_json|get_item:'ua' }}</p>
+                        <p>{{ comment.created_at }}</p>
                     </li>
                 {% endfor %}
             </ul>
