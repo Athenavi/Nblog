@@ -18,8 +18,8 @@ def index(request):
         'articles': articles,
         'total_pages': total_pages,
         'current_page': current_page,
-        'next_page': current_page + 1 if current_page < total_pages else current_page,
-        'prev_page': current_page - 1 if current_page > 1 else current_page,
+        'next_page': current_page + 1,
+        'prev_page': current_page - 1,
         'page_size': page_size,
     }
 

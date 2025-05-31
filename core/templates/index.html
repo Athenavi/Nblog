@@ -457,12 +457,23 @@
 
     // 加载文章并更新页面
     async function loadArticles(page, pageSize) {
-        const articles = await fetchArticles(page, pageSize);
-        initPage(articles);
-        document.getElementById('current-page').innerText = page;
-        // 如果你需要更新 total_pages，也可以在这里进行
-        // document.getElementById('total-pages').innerText = data.total_pages;
+        //const articles = await fetchArticles(page, pageSize);
+        //initPage(articles);
+        OpenInNewTab(page);
     }
+
+    function OpenInNewTab(page, pageSize) {
+        var url = window.location.href;
+        var urlParams = new URLSearchParams(new URL(url).search);
+
+        if (pageSize === undefined) {
+            pageSize = urlParams.get('page_size') || 50;
+        }
+
+        var newUrl = url.split('?')[0] + '?page=' + page + '&page_size=' + pageSize;
+        window.location.href = newUrl;
+    }
+
 
     document.addEventListener('DOMContentLoaded', () => {
         // 使用模拟数据初始化页面
@@ -475,4 +486,3 @@
         });
     });
 </script>
-
