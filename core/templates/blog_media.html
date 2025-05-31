@@ -329,18 +329,19 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <i class="
-                                            {% if '.jpg' in media.original_filename or '.jpeg' in media.original_filename or '.png' in media.original_filename %}
-                                                fas fa-image text-blue-500
-                                            {% elif '.pdf' in media.original_filename %}
-                                                fas fa-file-pdf text-purple-600
-                                            {% elif '.mp4' in media.original_filename or '.mov' in media.original_filename %}
-                                                fas fa-video text-orange-500
-                                            {% elif '.mp3' in media.original_filename or '.wav' in media.original_filename %}
-                                                fas fa-file-audio text-green-500
-                                            {% else %}
-                                                fas fa-file text-gray-500
-                                            {% endif %}
-                                            mr-2"></i>
+                                    {% if '.jpg' in media.original_filename or '.jpeg' in media.original_filename or '.png' in media.original_filename %}
+                                        fas fa-image text-blue-500
+                                    {% elif '.pdf' in media.original_filename %}
+                                        fas fa-file-pdf text-purple-600
+                                    {% elif '.mp4' in media.original_filename or '.mov' in media.original_filename %}
+                                        fas fa-video text-orange-500
+                                    {% elif '.mp3' in media.original_filename or '.wav' in media.original_filename %}
+                                        fas fa-file-audio text-green-500
+                                    {% else %}
+                                        fas fa-file text-gray-500
+                                    {% endif %}
+                                    mr-2 file-icon">
+                                    </i>
                                     <div class="text-sm font-medium text-gray-900 truncate max-w-xs">{{ media.original_filename }}</div>
                                 </div>
                             </td>
@@ -374,6 +375,7 @@
                 </table>
             </div>
         </div>
+
 
         <!-- 分页控件 -->
         <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
@@ -458,10 +460,24 @@
             mediaCards.forEach(card => {
                 const filename = card.querySelector('.truncate').textContent.toLowerCase();
                 const hash = card.querySelector('.hash-tag').getAttribute('title').toLowerCase();
-                const fileType = card.querySelector('.file-icon').classList.contains('fa-image') ? 'image' :
-                    card.querySelector('.file-icon').classList.contains('fa-file-pdf') ? 'document' :
-                        card.querySelector('.file-icon').classList.contains('fa-video') ? 'video' :
-                            card.querySelector('.file-icon').classList.contains('fa-file-audio') ? 'audio' : 'other';
+                const fileIcon = card.querySelector('.file-icon');
+
+                if (!fileIcon) {
+                    console.error('fileIcon is null for card:', card);
+                    return;
+                }
+
+                let fileType = 'other';
+
+                if (fileIcon.classList.contains('fa-image')) {
+                    fileType = 'image';
+                } else if (fileIcon.classList.contains('fa-file-pdf')) {
+                    fileType = 'document';
+                } else if (fileIcon.classList.contains('fa-video')) {
+                    fileType = 'video';
+                } else if (fileIcon.classList.contains('fa-file-audio')) {
+                    fileType = 'audio';
+                }
 
                 if ((filename.includes(searchString) || hash.includes(searchString)) &&
                     (selectedType === 'all' || fileType === selectedType)) {
@@ -476,10 +492,24 @@
             mediaRows.forEach(row => {
                 const filename = row.querySelector('.truncate').textContent.toLowerCase();
                 const hash = row.querySelector('.hash-tag').getAttribute('title').toLowerCase();
-                const fileType = row.querySelector('.file-icon').classList.contains('fa-image') ? 'image' :
-                    row.querySelector('.file-icon').classList.contains('fa-file-pdf') ? 'document' :
-                        row.querySelector('.file-icon').classList.contains('fa-video') ? 'video' :
-                            row.querySelector('.file-icon').classList.contains('fa-file-audio') ? 'audio' : 'other';
+                const fileIcon = row.querySelector('.file-icon');
+
+                if (!fileIcon) {
+                    console.error('fileIcon is null for row:', row);
+                    return;
+                }
+
+                let fileType = 'other';
+
+                if (fileIcon.classList.contains('fa-image')) {
+                    fileType = 'image';
+                } else if (fileIcon.classList.contains('fa-file-pdf')) {
+                    fileType = 'document';
+                } else if (fileIcon.classList.contains('fa-video')) {
+                    fileType = 'video';
+                } else if (fileIcon.classList.contains('fa-file-audio')) {
+                    fileType = 'audio';
+                }
 
                 if ((filename.includes(searchString) || hash.includes(searchString)) &&
                     (selectedType === 'all' || fileType === selectedType)) {
@@ -504,6 +534,12 @@
             } else {
                 emptyRow.style.display = 'none';
             }
+
+            // 调试输出
+            console.log('searchString:', searchString);
+            console.log('selectedType:', selectedType);
+            console.log('mediaCards:', mediaCards);
+            console.log('mediaRows:', mediaRows);
         }
 
         searchInput.addEventListener('input', debounce(filterMedia, 300));
