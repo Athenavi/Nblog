@@ -121,14 +121,19 @@ allowed_mimes = {
     'image/jpeg',
     'image/png',
     'image/gif',
+    'image/webp',
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.xmind.workbook',
     'video/mp4',
     'audio/mpeg',
+    'audio/wav',
+    'audio/mp3'
 }
+
 MEDIA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'media')
 print(MEDIA_ROOT)
 

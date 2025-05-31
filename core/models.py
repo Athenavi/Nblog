@@ -224,6 +224,7 @@ class Media(models.Model):
                     'updated_at': media.updated_at,
                     'hash': media.hash,
                     'file_size': FileHash.objects.get(hash=media.hash).file_size,
+                    'mime_type': FileHash.objects.get(hash=media.hash).mime_type,
                     'original_filename': media.original_filename
                 })
             return media_info if media_info else None
