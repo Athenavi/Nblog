@@ -523,24 +523,41 @@
             const emptyCard = document.querySelector('#media-container .col-span-full');
             const emptyRow = document.querySelector('#table-view .hidden-row');
 
-            if (mediaCards.length && !document.querySelector('.media-card[style="display: block;"]')) {
-                emptyCard.style.display = 'block';
-            } else {
-                emptyCard.style.display = 'none';
+            // 使用可选链操作符避免空引用错误
+            const hasVisibleCard = mediaCards.length &&
+                Array.from(mediaCards).some(card =>
+                    card?.style?.display === 'block'
+                );
+
+            // 安全操作emptyCard
+            if (emptyCard) {
+                emptyCard.style.display =
+                    (mediaCards.length && !hasVisibleCard) ? 'block' : 'none';
             }
 
-            if (mediaRows.length && !document.querySelector('#table-view .media-tr[style="display: table-row;"]')) {
-                emptyRow.style.display = 'table-row';
-            } else {
-                emptyRow.style.display = 'none';
-            }
+            // 使用可选链和空值合并
+            const showEmptyCard = () => {
+                if (!emptyCard?.style) {
+                    console.error('空状态元素无效');
+                    return;
+                }
 
-            // 调试输出
-            console.log('searchString:', searchString);
-            console.log('selectedType:', selectedType);
-            console.log('mediaCards:', mediaCards);
-            console.log('mediaRows:', mediaRows);
+                const hasVisibleCards = mediaCards?.length > 0 &&
+                    [...mediaCards].some(card =>
+                        card?.style?.display === 'block'
+                    );
+
+                emptyCard.style.display =
+                    (mediaCards?.length && !hasVisibleCards) ? 'block' : 'none';
+            };
+
+            showEmptyCard();
+            //console.log('searchString:', searchString);
+            //console.log('selectedType:', selectedType);
+            //console.log('mediaCards:', mediaCards);
+            //console.log('mediaRows:', mediaRows);
         }
+
 
         searchInput.addEventListener('input', debounce(filterMedia, 300));
         typeSelect.addEventListener('change', debounce(filterMedia, 300));
