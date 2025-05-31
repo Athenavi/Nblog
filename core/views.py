@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, JsonResponse, HttpResponseForbidden
+from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.http import urlencode
 
@@ -108,6 +108,113 @@ def media_route(request):
     }
     print(context)
     return render(request, 'blog_media.html', context)
+
+
+import os
+import hashlib
+import magic
+from django.core.files.storage import FileSystemStorage
+from core.models import FileHash, Media
+
+allowed_size = 10 * 1024 * 1024  # 10MB
+allowed_mimes = {
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'video/mp4',
+    'audio/mpeg',
+}
+MEDIA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'media')
+print(MEDIA_ROOT)
+
+
+@login_required
+def media_upload(request):
+    if request.method == 'POST':
+        uploaded_files = []
+        reused_files = 0
+
+        # 使用Django的文件存储系统
+        fs = FileSystemStorage()
+
+        for f in request.FILES.getlist('file'):
+            # 校验基础属性
+            if f.size > allowed_size:
+                return JsonResponse({'message': f'文件大小超出限制: {allowed_size / 1024 / 1024}MB'}, status=413)
+
+            # 读取文件内容并计算哈希
+            file_data = f.read()
+            file_hash = hashlib.sha256(file_data).hexdigest()
+            f.seek(0)  # 重置文件指针
+
+            # 校验MIME类型
+            mime_type = magic.from_buffer(file_data, mime=True)
+            if mime_type not in allowed_mimes:
+                print(f'拒绝: 用户 {request.user.username}, 无效的MIME类型 {mime_type}')
+                continue
+
+            # 检查哈希是否已存在
+            existing_file = FileHash.objects.filter(hash=file_hash, mime_type=mime_type).first()
+
+            storage_path = None
+            if existing_file:
+                # 复用已有文件
+                storage_path = existing_file.storage_path
+                print(f'复用已存在的文件: {storage_path}')
+                # 增加引用计数
+                existing_file.reference_count += 1
+                existing_file.save()
+            else:
+                # 生成存储路径（哈希分片目录）
+                hash_prefix = file_hash[:2]
+                hash_subdir = os.path.join(MEDIA_ROOT, 'hashed_files', hash_prefix)
+                os.makedirs(hash_subdir, exist_ok=True)
+
+                # 保存文件（示例路径格式：hashed_files/ab/abcdef12345...）
+                filename = f.name
+                storage_path = os.path.join(hash_subdir, file_hash)
+                with open(storage_path, 'wb') as dest:
+                    dest.write(file_data)
+
+                # 插入文件哈希记录
+                new_file_hash = FileHash(
+                    hash=file_hash,
+                    filename=filename,
+                    file_size=f.size,
+                    mime_type=mime_type,
+                    storage_path=storage_path,
+                    reference_count=1
+                )
+                new_file_hash.save()
+
+            # 插入媒体记录（即使文件已存在也需要记录用户关联）
+            try:
+                media_record = Media(
+                    user_id=request.user.id,
+                    hash=file_hash,
+                    original_filename=filename
+                )
+                media_record.save()
+                uploaded_files.append(filename)
+            except Exception as e:
+                # 处理同一用户重复上传相同文件
+                print(f'插入媒体记录时出错: {e}')
+                reused_files += 1
+                continue
+
+        return JsonResponse({
+            'message': 'success',
+            'uploaded': uploaded_files,
+            'reused': reused_files
+        }, status=200)
+
+    # 如果不是POST请求，则返回上传页面
+    return HttpResponse(open('templates/blog_media.html').read())
 
 
 from django.shortcuts import render, redirect

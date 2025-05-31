@@ -1,101 +1,77 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文章列表 | nblog</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#10b981',
-                        dark: '#1e293b',
-                        light: '#f8fafc'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .article-card {
-            transition: all 0.3s ease;
-        }
+<style>
+    .article-card {
+        transition: all 0.3s ease;
+    }
 
-        .article-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
+    .article-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
 
-        .tag {
-            transition: all 0.2s ease;
-        }
+    .tag {
+        transition: all 0.2s ease;
+    }
 
-        .tag:hover {
-            transform: scale(1.05);
-        }
+    .tag:hover {
+        transform: scale(1.05);
+    }
 
-        .pagination-btn:hover {
-            background-color: #e2e8f0;
-        }
+    .pagination-btn:hover {
+        background-color: #e2e8f0;
+    }
 
-        mark {
-            background-color: #fef9c3;
-            padding: 0 2px;
-            border-radius: 2px;
-        }
+    mark {
+        background-color: #fef9c3;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
 
-        .search-highlight {
-            background-color: #fef9c3;
-            padding: 0 2px;
-            border-radius: 2px;
-        }
+    .search-highlight {
+        background-color: #fef9c3;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
 
-        .skeleton {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+    .skeleton {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
 
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
         }
+        50% {
+            opacity: 0.5;
+        }
+    }
 
-        .featured-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+    .featured-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: white;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 
-        .status-badge {
-            font-size: 12px;
-            padding: 3px 10px;
-            border-radius: 20px;
-        }
+    .status-badge {
+        font-size: 12px;
+        padding: 3px 10px;
+        border-radius: 20px;
+    }
 
-        .stats-item {
-            transition: all 0.2s ease;
-        }
+    .stats-item {
+        transition: all 0.2s ease;
+    }
 
-        .stats-item:hover {
-            color: #3b82f6;
-            transform: scale(1.05);
-        }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
+    .stats-item:hover {
+        color: #3b82f6;
+        transform: scale(1.05);
+    }
+</style>
 <!-- 导航栏 -->
 {% include "nav.html" %}
 <div class="container mx-auto px-4 py-8">
@@ -486,5 +462,4 @@
         });
     });
 </script>
-</body>
-</html>
+

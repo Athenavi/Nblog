@@ -1,3 +1,4 @@
+import jsonify
 import markdown
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db import models
@@ -148,6 +149,12 @@ class BlogContent(models.Model):
     @staticmethod
     def get_markdown_content(blog_id):
         try:
+            is_safe_open = BlogMeta.objects.get(id=blog_id).status == 'Published'
+            if not is_safe_open:
+                return '<h1>文章无法查看</h1>'
+            locked = BlogMeta.objects.get(id=blog_id).locked
+            if locked:
+                return '<h1>文章已加密</h1>'
             content = BlogContent.objects.get(blog_id=blog_id)
             return markdown.markdown(content.content, extensions=[
                 'markdown.extensions.extra',

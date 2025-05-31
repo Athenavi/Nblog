@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>媒体资源管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/dropzone.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         tailwind.config = {
@@ -156,12 +157,29 @@
         </div>
 
         <!-- 上传区域 -->
-        <div class="upload-area bg-white rounded-xl shadow-sm p-8 mb-8 text-center cursor-pointer transition">
-            <i class="fas fa-cloud-upload-alt text-4xl text-primary mb-3"></i>
-            <h3 class="text-xl font-semibold text-gray-800 mb-1">拖放文件到此处上传</h3>
-            <p class="text-gray-600 mb-4">或 <span class="text-primary font-medium">浏览文件</span></p>
-            <p class="text-gray-500 text-sm">支持 JPG, PNG, GIF, MP4, PDF 等格式，最大文件大小 100MB</p>
-        </div>
+        <form action="/api/media/upload"
+              class="dropzone upload-area bg-white rounded-xl shadow-sm p-8 mb-8 text-center cursor-pointer transition"
+              method="POST" enctype="multipart/form-data" id="myDropzone">{% csrf_token %}</form>
+        <script src="/static/js/dropzone.js"></script>
+        <script>
+            // Initialize Dropzone
+            Dropzone.options.myDropzone = {
+                acceptedFiles: '.jpg, .png, .webp, .jfif, .pjpeg, .jpeg, .pjp, .mp4, .xmind',
+                maxFilesize: 60,
+                maxFiles: 3,
+                dictFileTooBig: '超出文件大小限制 ({{filesize}}MB). 最大文件大小: {{maxFilesize}}MB.',
+                dictInvalidFileType: '无效的文件类型. 仅支持 JPG, PNG, WEBP, JFIF, PJPEG, JPEG, PJP, MP4 文件。',
+                init: function () {
+                    this.on('success', function (file, response) {
+                        console.log('文件上传成功');
+                    });
+                    this.on('error', function (file, errorMessage) {
+                        console.log('文件上传错误: ' + errorMessage);
+                    });
+                },
+                withCredentials: true,
+            };
+        </script>
 
         <!-- 媒体文件列表 -->
         <div class="mb-6 flex justify-between items-center">
@@ -496,4 +514,6 @@
     });
 </script>
 </body>
+<!-- 页脚 -->
+{% include "footer.html" %}
 </html>
