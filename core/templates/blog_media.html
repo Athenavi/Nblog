@@ -68,6 +68,21 @@
             display: block;
         }
 
+        .preview-modal {
+            backdrop-filter: blur(5px);
+        }
+
+        .preview-content {
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #preview-container {
+            flex: 1;
+            overflow: auto;
+        }
+
         #media-container.grid-view {
             display: grid;
             grid-template-columns: 1fr;
@@ -364,40 +379,40 @@
         <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
-                    <p class="text-sm text-gray-700">
-                        显示第 <span class="font-medium">1</span> 到 <span
-                            class="font-medium">{{ media_list|length }}</span> 项，共
-                        <span class="font-medium">{{ media_list|length }}</span> 项
-                    </p>
-                </div>
-                <div>
                     <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                        <a href="#"
-                           class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                            <span class="sr-only">上一页</span>
-                            <i class="fas fa-chevron-left h-4 w-4"></i>
-                        </a>
-                        <a href="#" aria-current="page"
-                           class="relative z-10 inline-flex items-center bg-primary text-white px-4 py-2 text-sm font-semibold focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">1</a>
-                        <a href="#"
-                           class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">2</a>
-                        <a href="#"
-                           class="relative hidden items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 md:inline-flex">3</a>
-                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">...</span>
-                        <a href="#"
-                           class="relative hidden items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 md:inline-flex">8</a>
-                        <a href="#"
-                           class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                            <span class="sr-only">下一页</span>
-                            <i class="fas fa-chevron-right h-4 w-4"></i>
-                        </a>
+                        {% if prev_page %}
+                            <a href="?page={{ prev_page }}"
+                               class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                <span class="sr-only">上一页</span>
+                                <i class="fas fa-chevron-left h-4 w-4"></i>
+                            </a>
+                        {% else %}
+                            <a href="#"
+                               class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 bg-gray-100 cursor-not-allowed">
+                                <span class="sr-only">上一页</span>
+                                <i class="fas fa-chevron-left h-4 w-4"></i>
+                            </a>
+                        {% endif %}
+                        {% if next_page %}
+                            <a href="?page={{ next_page }}"
+                               class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                <span class="sr-only">下一页</span>
+                                <i class="fas fa-chevron-right h-4 w-4"></i>
+                            </a>
+                        {% else %}
+                            <a href="#"
+                               class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 bg-gray-100 cursor-not-allowed">
+                                <span class="sr-only">下一页</span>
+                                <i class="fas fa-chevron-right h-4 w-4"></i>
+                            </a>
+                        {% endif %}
                     </nav>
                 </div>
             </div>
         </div>
+
     </main>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const viewGridBtn = document.getElementById('view-grid');
@@ -637,21 +652,3 @@
         }
     });
 </script>
-
-
-<style>
-    .preview-modal {
-        backdrop-filter: blur(5px);
-    }
-
-    .preview-content {
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #preview-container {
-        flex: 1;
-        overflow: auto;
-    }
-</style>

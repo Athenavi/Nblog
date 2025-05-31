@@ -1,4 +1,3 @@
-import jsonify
 import markdown
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db import models
@@ -212,11 +211,13 @@ class Media(models.Model):
             return None
 
     @staticmethod
-    def get_media_info_by_user(request):
+    def get_media_info_by_user(request, page=1):
         try:
             media_list = Media.objects.filter(user=request.user)
+            paginator = Paginator(media_list, 75)  # 每页最多75个
+            current_page_media = paginator.get_page(page)
             media_info = []
-            for media in media_list:
+            for media in current_page_media:
                 media_info.append({
                     'id': media.id,
                     'user': media.user.username if media.user else None,
@@ -227,10 +228,18 @@ class Media(models.Model):
                     'mime_type': FileHash.objects.get(hash=media.hash).mime_type,
                     'original_filename': media.original_filename
                 })
-            return media_info if media_info else None
+
+            # 计算分页信息
+            current_page = current_page_media.number
+            prev_page = current_page_media.previous_page_number() if current_page_media.has_previous() else None
+            next_page = current_page_media.next_page_number() if current_page_media.has_next() else None
+            total_page = paginator.num_pages
+
+            return media_info, current_page, prev_page, next_page, total_page
         except Exception as e:
             print(f"An error occurred: {e}")
-        return None
+        return None, None, None, None, None
+
 
 
 class FileHash(models.Model):

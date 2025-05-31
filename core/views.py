@@ -105,10 +105,15 @@ def save_blog(blog_meta, blog_content, post_data):
 
 @login_required
 def media_route(request):
-    media_list = Media.get_media_info_by_user(request)
+    page = request.GET.get('page', 1)
+    media_list, current_page, prev_page, next_page, total_page = Media.get_media_info_by_user(request, page)
     context = {
         'media_list': media_list,
         'file_types': {'image', 'document', 'video', 'audio'},
+        'current_page': current_page,
+        'prev_page': prev_page,
+        'next_page': next_page,
+        'total_page': total_page,
     }
     print(context)
     return render(request, 'blog_media.html', context)
