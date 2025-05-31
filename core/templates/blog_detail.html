@@ -14,5 +14,37 @@
             </div>
         </div>
     </div>
+    <!-- 评论表单 -->
+    <div id="comment-form" class="mt-8 bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-medium mb-4">发表评论</h3>
+        <form action="/blog/{{ meta.id }}/comment/" method="post">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="comment-text" class="block text-sm font-medium text-gray-700">评论内容</label>
+                <textarea name="comment-text" id="comment-text" required
+                          class="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-700">
+                提交评论
+            </button>
+        </form>
+    </div>
+    <!-- 显示评论 -->
+    <div id="comments" class="mt-8 bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-medium mb-4">评论</h3>
+        {% if comments %}
+            <ul class="space-y-3">
+                {% for comment in comments %}
+                    <li class="flex items-center space-x-2">
+                        <strong class="text-gray-800">{{ comment.user.username }}</strong>
+                        <span class="text-gray-500">: {{ comment.content }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-500">还没有评论。</p>
+        {% endif %}
+    </div>
+
 </main>
 {% include 'footer.html' %}

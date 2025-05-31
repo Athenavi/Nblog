@@ -3,7 +3,7 @@ from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpRespon
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.http import urlencode
 
-from .models import BlogMeta, BlogContent, Media
+from .models import BlogMeta, BlogContent, Media, Comment
 
 
 def index(request):
@@ -34,16 +34,38 @@ def blog_detail(request, blog_id):
             return HttpResponseForbidden('blog is locked but you are the author.')
         else:
             return HttpResponseForbidden('blog is locked but you are not the author.')
+
     content = BlogContent.get_markdown_content(blog_id=blog_id)
     if not content:
         raise Http404("No such blog content")
-    # 将文章内容传递给模板
+
+    # 获取文章评论
+    comments = Comment.objects.filter(article_id=blog_id)
+
+    # 将文章内容和评论信息传递给模板
     context = {
         'content': content,
-        'meta': meta
+        'meta': meta,
+        'comments': comments
     }
-    # print(context)
+    if request.method == 'POST':
+        # 处理评论添加
+        return comment_add(request, blog_id)
+
     return render(request, 'blog_detail.html', context)
+
+
+@login_required
+def comment_add(request, blog_id):
+    if request.method == 'POST':
+        content = request.POST.get('comment-text')
+        user = request.user
+        article = get_object_or_404(BlogMeta, id=blog_id)
+        comment = Comment(article=article, user=user, content=content)
+        comment.save()
+        return redirect('blog_detail', blog_id=blog_id)
+    else:
+        return redirect('blog_detail', blog_id=blog_id)
 
 
 @login_required

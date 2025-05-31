@@ -1,11 +1,12 @@
 from django.urls import path
 from core.views import index, blog_detail, blog_edit, blog_new, media_route, register, login_view, user_profile, \
-    logout_view, login_enter, edit_profile, media_upload, media_preview
+    logout_view, login_enter, edit_profile, media_upload, media_preview, comment_add
 
 urlpatterns = [
     path('', index, name='index'),
     path('blog/<int:blog_id>/', blog_detail, name='blog_detail'),
     path('blog/edit/<int:blog_id>', blog_edit, name='blog_edit'),
+    path('blog/<int:blog_id>/comment/', comment_add, name='comment_add'),
     path('blog/new/', blog_new, name='blog_new'),
     path('media', media_route, name='media_route'),
     path('register/', register, name='register'),
