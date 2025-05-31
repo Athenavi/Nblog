@@ -526,7 +526,6 @@
         </div>
     </div>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const previewModal = document.getElementById('previewModal');
@@ -554,12 +553,14 @@
 
         // 关闭预览
         document.getElementById('close-preview').addEventListener('click', function () {
+            pauseMedia();
             previewModal.style.display = 'none';
         });
 
         // 点击模态框背景关闭
         previewModal.addEventListener('click', function (e) {
             if (e.target === previewModal) {
+                pauseMedia();
                 previewModal.style.display = 'none';
             }
         });
@@ -571,7 +572,9 @@
             // 设置基本信息
             previewTitle.textContent = filename;
             previewInfo.textContent = `${type} | ${size} | ${date}`;
-            downloadButton.onclick = () => window.location.href = url + '?download=true';
+            downloadButton.onclick = () => {
+                window.open(url + '?download=true', '_blank');
+            };
 
             // 清空预览容器
             previewContainer.innerHTML = '';
@@ -618,8 +621,23 @@
             // 显示模态框
             previewModal.style.display = 'flex';
         }
+
+        // 暂停媒体播放函数
+        function pauseMedia() {
+            const videoElement = previewContainer.querySelector('video');
+            const audioElement = previewContainer.querySelector('audio');
+
+            if (videoElement) {
+                videoElement.pause();
+            }
+
+            if (audioElement) {
+                audioElement.pause();
+            }
+        }
     });
 </script>
+
 
 <style>
     .preview-modal {
