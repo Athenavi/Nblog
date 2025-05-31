@@ -1,6 +1,6 @@
 from django.urls import path
 from core.views import index, blog_detail, blog_edit, blog_new, media_route, register, login_view, user_profile, \
-    logout_view, login_enter
+    logout_view, login_enter, edit_profile
 
 urlpatterns = [
     path('', index, name='index'),
@@ -13,4 +13,5 @@ urlpatterns = [
     path('login/', login_enter, name='login_view'),
     path('profile/', user_profile, name='user_profile'),
     path('logout/', logout_view, name='logout'),
+    path('profile/edit', edit_profile, name='edit_profile'),
 ]

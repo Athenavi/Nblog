@@ -167,3 +167,18 @@ def login_enter(request):
     next_url = request.GET.get('next', '/')  # 从请求中获取next参数，如果没有则默认为根目录
     query_string = urlencode({'next': next_url})
     return redirect(f'/accounts/login?{query_string}')
+
+
+from .forms import UserProfileForm
+
+
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('user_profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+    return render(request, 'user_profile_edit.html', {'form': form})
