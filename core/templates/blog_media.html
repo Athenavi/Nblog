@@ -193,12 +193,24 @@
                 </button>
             </div>
         </div>
+        {% for media in media_list %}
+            <div class="media-data hidden"
+                 data-hash="{{ media.hash }}"
+                 data-filename="{{ media.original_filename }}"
+                 data-type="{{ media.mime_type }}"
+                 data-size="{{ media.file_size|filesizeformat }}"
+                 data-date="{{ media.created_at|date:'Y-m-d H:i' }}"
+                 data-url="{% url 'media_preview' media_hash=media.hash media_original_filename=media.original_filename %}"
+                 data-user="{{ media.user|default:'未指定' }}">
+            </div>
+        {% endfor %}
 
         <!-- 文件卡片网格 -->
         <div id="media-container"
              class="grid-view grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
             {% for media in media_list %}
-                <div class="media-card bg-white rounded-xl shadow-sm overflow-hidden transition duration-300">
+                <div class="media-card bg-white rounded-xl shadow-sm overflow-hidden transition duration-300 cursor-pointer"
+                     data-id="{{ media.hash }}">
                     <div class="relative">
                         <div class="h-48 bg-gradient-to-r
                             {% if '.jpg' in media.original_filename or '.jpeg' in media.original_filename or '.png' in media.original_filename %}
@@ -301,7 +313,7 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                     {% for media in media_list %}
-                        <tr class="media-tr">
+                        <tr class="media-tr" data-id="{{ media.hash }}">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <i class="
@@ -487,33 +499,144 @@
 
         // 初始化视图
         filterMedia();
-
-        // 简单的交互效果
-        const uploadArea = document.querySelector('.upload-area');
-
-        // 拖拽效果
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('drag-over');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('drag-over');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('drag-over');
-            alert('文件已准备好上传！');
-        });
-
-        // 点击上传区域
-        uploadArea.addEventListener('click', () => {
-            alert('打开文件选择对话框');
-        });
     });
 </script>
 </body>
 <!-- 页脚 -->
 {% include "footer.html" %}
 </html>
+
+<!-- 文件预览模态框 -->
+<div class="preview-modal fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+     id="previewModal"
+     style="display: none;">
+    <div class="preview-content bg-white rounded-lg shadow-lg w-11/12 max-w-4xl">
+        <div class="preview-header flex items-center justify-between p-4 border-b">
+            <h3 class="text-lg font-semibold truncate max-w-xs" id="preview-title"></h3>
+            <button id="close-preview" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-4" id="preview-container" style="max-height: 60vh; overflow: auto;">
+            <!-- 动态渲染预览内容 -->
+        </div>
+        <div class="preview-footer p-4 border-t flex justify-between items-center">
+            <div class="text-sm text-gray-600" id="preview-info"></div>
+            <button id="download-button"
+                    class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                <i class="fas fa-download mr-2"></i>下载文件
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const previewModal = document.getElementById('previewModal');
+        const previewContainer = document.getElementById('preview-container');
+        const previewTitle = document.getElementById('preview-title');
+        const previewInfo = document.getElementById('preview-info');
+        const downloadButton = document.getElementById('download-button');
+
+        // 点击媒体卡片或表格行触发预览
+        document.querySelectorAll('.media-card, .media-tr').forEach(item => {
+            item.addEventListener('click', function (e) {
+                // 排除操作按钮点击
+                if (e.target.closest('button') || e.target.tagName === 'I') {
+                    return;
+                }
+
+                const mediaId = this.dataset.id;
+                const mediaData = document.querySelector(`.media-data[data-hash="${mediaId}"]`);
+
+                if (mediaData) {
+                    showPreview(mediaData.dataset);
+                }
+            });
+        });
+
+        // 关闭预览
+        document.getElementById('close-preview').addEventListener('click', function () {
+            previewModal.style.display = 'none';
+        });
+
+        // 点击模态框背景关闭
+        previewModal.addEventListener('click', function (e) {
+            if (e.target === previewModal) {
+                previewModal.style.display = 'none';
+            }
+        });
+
+        // 显示预览函数
+        function showPreview(data) {
+            const {filename, type, size, date, url, user} = data;
+
+            // 设置基本信息
+            previewTitle.textContent = filename;
+            previewInfo.textContent = `${type} | ${size} | ${date}`;
+            downloadButton.onclick = () => window.location.href = url + '?download=true';
+
+            // 清空预览容器
+            previewContainer.innerHTML = '';
+
+            // 根据文件类型渲染预览
+            if (type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = filename;
+                img.className = 'w-full max-h-[50vh] object-contain';
+                previewContainer.appendChild(img);
+
+            } else if (type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.src = url;
+                video.controls = true;
+                video.className = 'w-full';
+                previewContainer.appendChild(video);
+
+            } else if (type.startsWith('audio/')) {
+                const audio = document.createElement('audio');
+                audio.src = url;
+                audio.controls = true;
+                audio.className = 'w-full';
+                previewContainer.appendChild(audio);
+
+            } else if (type === 'application/pdf') {
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.className = 'w-full h-[50vh]';
+                previewContainer.appendChild(iframe);
+
+            } else {
+                // 不支持预览的文件类型
+                previewContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-64">
+                    <i class="fas fa-file text-6xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600">该文件类型不支持预览</p>
+                    <p class="text-sm text-gray-500 mt-2">请下载后查看</p>
+                </div>
+            `;
+            }
+
+            // 显示模态框
+            previewModal.style.display = 'flex';
+        }
+    });
+</script>
+
+<style>
+    .preview-modal {
+        backdrop-filter: blur(5px);
+    }
+
+    .preview-content {
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #preview-container {
+        flex: 1;
+        overflow: auto;
+    }
+</style>

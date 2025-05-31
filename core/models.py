@@ -223,6 +223,7 @@ class Media(models.Model):
                     'created_at': media.created_at,
                     'updated_at': media.updated_at,
                     'hash': media.hash,
+                    'file_size': FileHash.objects.get(hash=media.hash).file_size,
                     'original_filename': media.original_filename
                 })
             return media_info if media_info else None

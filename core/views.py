@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponse
+from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponse, FileResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.http import urlencode
 
@@ -289,3 +289,28 @@ def edit_profile(request):
     else:
         form = UserProfileForm(instance=request.user)
     return render(request, 'user_profile_edit.html', {'form': form})
+
+
+@login_required
+def media_preview(request, media_hash, media_original_filename):
+    # 获取文件信息
+    file_hash = get_object_or_404(FileHash, hash=media_hash)
+    file_path = file_hash.storage_path
+    file_type = file_hash.mime_type
+
+    # 判断是否支持预览
+    previewable_types = [
+        'image/jpeg', 'image/png', 'image/gif',
+        'video/mp4', 'video/webm', 'video/quicktime',
+        'audio/mpeg', 'audio/wav', 'application/pdf'
+    ]
+
+    as_attachment = file_type not in previewable_types
+
+    # 提供文件响应
+    if os.path.exists(file_path):
+        response = FileResponse(open(file_path, 'rb'), content_type=file_type)
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
+            media_original_filename) if as_attachment else 'inline'
+        return response
+    raise Http404("文件不存在")

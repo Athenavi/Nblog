@@ -1,6 +1,6 @@
 from django.urls import path
 from core.views import index, blog_detail, blog_edit, blog_new, media_route, register, login_view, user_profile, \
-    logout_view, login_enter, edit_profile, media_upload
+    logout_view, login_enter, edit_profile, media_upload, media_preview
 
 urlpatterns = [
     path('', index, name='index'),
@@ -15,4 +15,7 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('profile/edit', edit_profile, name='edit_profile'),
     path('api/media/upload', media_upload, name='media_upload'),
+    path('media/preview/<str:media_hash>/<str:media_original_filename>',
+         media_preview,
+         name='media_preview'),
 ]
