@@ -176,7 +176,6 @@ allowed_mimes = {
 MEDIA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'media')
 print(MEDIA_ROOT)
 
-
 @login_required
 def media_upload(request):
     if request.method == 'POST':
@@ -187,6 +186,7 @@ def media_upload(request):
         fs = FileSystemStorage()
 
         for f in request.FILES.getlist('file'):
+            filename = f.name  # 在每次循环开始时定义filename变量
             # 校验基础属性
             if f.size > allowed_size:
                 return JsonResponse({'message': f'文件大小超出限制: {allowed_size / 1024 / 1024}MB'}, status=413)
@@ -220,7 +220,6 @@ def media_upload(request):
                 os.makedirs(hash_subdir, exist_ok=True)
 
                 # 保存文件（示例路径格式：hashed_files/ab/abcdef12345...）
-                filename = f.name
                 storage_path = os.path.join(hash_subdir, file_hash)
                 with open(storage_path, 'wb') as dest:
                     dest.write(file_data)
@@ -275,7 +274,7 @@ def register(request):
         else:
             # 处理表单验证失败的情况
             # 将错误信息传递给模板
-            return render(request, 'register.html', {'form': form})
+            return render(request, 'reg.html', {'form': form})
     else:
         form = UserCreationForm()
     return render(request, 'reg.html', {'form': form})

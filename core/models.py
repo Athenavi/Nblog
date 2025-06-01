@@ -184,7 +184,6 @@ class Media(models.Model):
     )
     hash = models.CharField(
         max_length=64,
-        unique=True,
         verbose_name='文件哈希',
     )
     original_filename = models.CharField(
