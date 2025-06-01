@@ -33,10 +33,8 @@ def blog_detail(request, blog_id):
     meta = BlogMeta.objects.get(id=blog_id)
     locked = meta.locked
     if locked is True:
-        if meta.user == request.user:
-            return HttpResponseForbidden('blog is locked but you are the author.')
-        else:
-            return HttpResponseForbidden('blog is locked but you are not the author.')
+        if meta.user != request.user:
+            return HttpResponseForbidden('当前内容您无权访问。')
 
     content = BlogContent.get_markdown_content(blog_id=blog_id)
     if not content:
