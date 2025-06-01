@@ -69,17 +69,15 @@
                 <i class="fas fa-blog text-primary text-2xl"></i>
                 <span class="text-xl font-bold">nblog</span>
             </a>
-
             <!-- 桌面导航链接 - 优化样式 -->
             <div class="hidden md:flex space-x-1">
-                <a href="/" class="nav-link active">首页</a>
-                <a href="/media" class="nav-link">媒体</a>
-                <a href="/about" class="nav-link">关于</a>
-                <a href="/contact" class="nav-link">联系我们</a>
-            </div>
 
+            </div>
             <!-- 右侧区域 -->
             <div class="flex items-center space-x-4">
+                <div class="hidden md:flex space-x-1">
+                    <a href="/media" class="nav-link">媒体</a>
+                </div>
                 <!-- 搜索按钮 -->
                 <button class="p-2 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 transition-colors">
                     <i class="fas fa-search"></i>
@@ -100,10 +98,27 @@
                 </button>
 
                 <!-- 个人资料按钮 - 优化样式 -->
-                <a href="/profile"
-                   class="flex items-center justify-center h-9 w-9 rounded-full profile-btn shadow-sm transition-transform hover:scale-105">
-                    <span class="text-gray-700 font-medium text-sm">我的</span>
-                </a>
+                <!-- 用户菜单 -->
+                <div class="ml-3 relative">
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center" onclick="window.location.href='/profile';">
+                            <img class="h-8 w-8 rounded-full"
+                                 src="https://ui-avatars.com/api/?name={{ user.username|urlencode }}&background=3b82f6&color=fff}"
+                                 alt="用户头像" title="{{ user.username }}">
+                        </div>
+                    {% else %}
+                        <div class="flex-shrink-0">
+                            <a href="/login"
+                               class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary shadow-sm hover:bg-secondary focus:outline-none">
+                                <i class="fa fa-arrow-right-to-bracket mr-2"></i>登录
+                            </a>
+                            <a href="/register"
+                               class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary shadow-sm hover:bg-secondary focus:outline-none">
+                                <i class="fa fa-user-plus mr-2"></i>注册
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -113,8 +128,7 @@
         <div class="pt-1 pb-3 space-y-1 px-4">
             <a href="/" class="nav-link block py-3 pl-3 border-l-2 border-primary">首页</a>
             <a href="/media" class="nav-link block py-3 pl-3 border-l-2 border-transparent">媒体</a>
-            <a href="/about" class="nav-link block py-3 pl-3 border-l-2 border-transparent">关于</a>
-            <a href="/contact" class="nav-link block py-3 pl-3 border-l-2 border-transparent">联系我们</a>
+            <a href="/i/posts" class="nav-link block py-3 pl-3 border-l-2 border-transparent">我的文章</a>
         </div>
     </div>
 </nav>
