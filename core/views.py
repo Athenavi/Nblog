@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponse, FileResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.http import urlencode
@@ -175,6 +176,7 @@ allowed_mimes = {
 
 MEDIA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'media')
 print(MEDIA_ROOT)
+
 
 @login_required
 def media_upload(request):
@@ -357,3 +359,80 @@ def media_preview(request, media_hash, media_original_filename):
             media_original_filename) if as_attachment else 'inline'
         return response
     raise Http404("文件不存在")
+
+
+@login_required
+def my_blog_list(request):
+    # 获取筛选条件
+    status_filter = request.GET.get('status', 'all')
+    search_query = request.GET.get('q', '')
+    sort = request.GET.get('sort', '-created_at')
+
+    # 获取当前用户文章
+    blogs = BlogMeta.objects.filter(user=request.user)
+
+    # 状态筛选
+    if status_filter != 'all':
+        blogs = blogs.filter(status=status_filter)
+
+    # 搜索
+    if search_query:
+        blogs = blogs.filter(title__icontains=search_query)
+
+    # 排序
+    blogs = blogs.order_by(sort)
+
+    # 计算各状态数量
+    counts = {
+        'total': BlogMeta.objects.filter(user=request.user).count(),
+        'draft': BlogMeta.objects.filter(user=request.user, status='Draft').count(),
+        'published': BlogMeta.objects.filter(user=request.user, status='Published').count(),
+        'deleted': BlogMeta.objects.filter(user=request.user, status='Deleted').count(),
+    }
+
+    # 分页
+    paginator = Paginator(blogs, 10)  # 每页10篇文章
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'blogs': page_obj.object_list,
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'status_filter_display': dict(BlogMeta.STATUS_CHOICES).get(status_filter, '所有'),
+        'counts': counts,
+        'sort': sort.lstrip('-') if sort.startswith('-') else sort,
+    }
+    return render(request, 'my_blog_list.html', context)
+
+
+@login_required
+def blog_restore(request, blog_id):
+    # 获取文章元数据和内容
+    blog_meta = get_object_or_404(BlogMeta, id=blog_id)
+    # blog_content = get_object_or_404(BlogContent, blog_id=blog_id)
+    if blog_meta.user != request.user:
+        return HttpResponseForbidden("你没有编辑这篇文章的权限。")
+
+    if blog_meta.status == 'Deleted':
+        blog_meta.status = 'Draft'
+        blog_meta.save()
+        return redirect('my_blog_list')
+    else:
+        return redirect('my_blog_list')
+
+
+@login_required
+def blog_delete(request, blog_id):
+    # 获取文章元数据和内容
+    blog_meta = get_object_or_404(BlogMeta, id=blog_id)
+    blog_content = get_object_or_404(BlogContent, blog_id=blog_id)  # 取消注释以获取博客内容对象
+
+    if blog_meta.user != request.user:
+        return HttpResponseForbidden("你没有编辑这篇文章的权限。")
+
+    # 从数据库中彻底删除博客元数据和内容
+    blog_content.delete()  # 删除博客内容对象
+    blog_meta.delete()
+
+    return redirect('my_blog_list')

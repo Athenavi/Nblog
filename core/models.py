@@ -86,7 +86,6 @@ class BlogMeta(models.Model):
         except ValueError:
             page_size = 10
 
-        # 获取所有公开文章信息
         articles = BlogMeta.published.order_by('-created_at')
 
         # 创建分页器对象
@@ -124,7 +123,7 @@ class BlogMeta(models.Model):
             }
             articles_list.append(article_info)
 
-        return articles_list, paginator.num_pages, page_obj.number,page_size
+        return articles_list, paginator.num_pages, page_obj.number, page_size
 
 
 class BlogContent(models.Model):
@@ -238,7 +237,6 @@ class Media(models.Model):
         except Exception as e:
             print(f"An error occurred: {e}")
         return None, None, None, None, None
-
 
 
 class FileHash(models.Model):
