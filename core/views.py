@@ -4,6 +4,7 @@ from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpRespon
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.http import urlencode
 
+from .decorators import increase_blog_views
 from .models import BlogMeta, BlogContent, Media, Comment
 
 
@@ -27,6 +28,7 @@ def index(request):
     return render(request, 'index.html', context)
 
 
+@increase_blog_views
 def blog_detail(request, blog_id):
     meta = BlogMeta.objects.get(id=blog_id)
     locked = meta.locked
