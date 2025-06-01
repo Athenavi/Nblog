@@ -85,6 +85,7 @@
                         <div class="flex items-center">
                             <img class="h-8 w-8 rounded-full" src="
 
+
                                     {% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ user.username|urlencode }}&background=3b82f6&color=fff{% endif %}"
                                  alt="用户头像">
                             <span class="ml-2 text-sm font-medium text-gray-700 hidden md:block">{{ user.username }}</span>
@@ -173,9 +174,6 @@
                                 </div>
                             {% endif %}
                             {% if blog.locked %}
-                                <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                                    <i class="fas fa-lock text-white text-xl"></i>
-                                </div>
                             {% endif %}
                             {% if blog.status == 'Deleted' %}
 
@@ -260,7 +258,7 @@
                                 </a>
                             {% endif %}
                             {% if blog.locked %}
-                                <a href="{% url 'blog_password' blog.id %}"
+                                <a href="#"
                                    class="action-btn inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-transform">
                                     <i class="fas fa-key mr-1"></i> 管理密码
                                 </a>
@@ -297,12 +295,14 @@
                 {% if page_obj.has_previous %}
                     <a href="?page=
 
+
                             {{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         上一页 </a>
                 {% endif %}
                 {% if page_obj.has_next %}
                     <a href="?page=
+
 
                             {{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                        class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
@@ -322,6 +322,7 @@
                         {% if page_obj.has_previous %}
                             <a href="?page=
 
+
                                     {{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 <span class="sr-only">上一页</span>
@@ -333,10 +334,12 @@
                             {% if page_obj.number == num %}
                                 <a href="?page=
 
+
                                         {{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                                    class="relative inline-flex items-center px-4 py-2 border border-primary text-sm font-medium text-primary bg-primary bg-opacity-10">{{ num }}</a>
                             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                                 <a href="?page=
+
 
                                         {{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{{ num }}</a>
@@ -345,6 +348,7 @@
 
                         {% if page_obj.has_next %}
                             <a href="?page=
+
 
                                     {{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
