@@ -33,16 +33,22 @@
 
     <!-- 显示评论 -->
     <div id="comments" class="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-medium mb-4">评论</h3>
+        <h3 class="text-lg font-medium text-gray-800 mb-4">评论</h3>
         {% if comments %}
-            <ul class="space-y-3">
+            <ul class="space-y-4">
                 {% for comment in comments %}
-                    <li class="flex items-center space-x-2">
-                        <strong class="text-gray-800">{{ comment.user.username }}</strong>
-                        <p>内容: {{ comment.content|parse_json|get_item:'content'|safe }}</p>
-                        <p>{{ comment.content|parse_json|get_item:'ip' }}</p>
-                        <p>{{ comment.content|parse_json|get_item:'ua' }}</p>
-                        <p>{{ comment.created_at }}</p>
+                    <li class="flex items-start space-x-4">
+                        <div class="flex-shrink-0">
+                            <img class="h-8 w-8 rounded-full"
+                                 src="https://ui-avatars.com/api/?name={{ comment.user.username|urlencode }}&background=3b82f6&color=fff}"
+                                 alt="用户头像" title="{{ comment.user.usernamee }}">
+                        </div>
+                        <div class="flex flex-col space-y-1">
+                            <p class="text-gray-600">{{ comment.content|parse_json|get_item:'content'|safe }}</p>
+                            <p class="text-gray-400 text-sm">{{ comment.content|parse_json|get_item:'ip' }}</p>
+                            <p class="text-gray-400 text-sm ua-parser">{{ comment.content|parse_json|get_item:'ua' }}</p>
+                            <p class="text-gray-400 text-sm">{{ comment.created_at }}</p>
+                        </div>
                     </li>
                 {% endfor %}
             </ul>
@@ -50,6 +56,29 @@
             <p class="text-gray-500">还没有评论。</p>
         {% endif %}
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@latest/dist/ua-parser.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 获取所有包含 UA 内容的元素
+            const uaElements = document.querySelectorAll('.ua-parser');
+
+            // 遍历每个元素并解析 UA 字符串
+            uaElements.forEach(element => {
+                const uaString = element.textContent;
+                const parser = new UAParser(uaString);
+                const result = parser.getResult();
+
+                // 构建解析后的 UA 字符串
+                const deviceType = result.device.type || 'PC';
+                const browserName = result.browser.name || 'Unknown';
+                const osName = result.os.name || 'Unknown';
+
+                // 更新元素内容
+                element.textContent = `${deviceType.toUpperCase()} / ${browserName} / ${osName}`;
+            });
+        });
+    </script>
+
 
 </main>
 {% include 'footer.html' %}

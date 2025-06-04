@@ -211,7 +211,7 @@ class Media(models.Model):
     @staticmethod
     def get_media_info_by_user(request, page=1):
         try:
-            media_list = Media.objects.filter(user=request.user)
+            media_list = Media.objects.filter(user=request.user).order_by('-id')
             paginator = Paginator(media_list, 75)  # 每页最多75个
             current_page_media = paginator.get_page(page)
             media_info = []
