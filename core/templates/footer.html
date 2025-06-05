@@ -16,7 +16,12 @@
         const openIcon = document.getElementById('open-icon');
         const closeIcon = document.getElementById('close-icon');
 
-        menuBtn.addEventListener('click', function () {
+        menuBtn.addEventListener('click', toggleMobileMenu);
+
+        // 添加点击关闭图标时的事件监听器
+        closeIcon.addEventListener('click', toggleMobileMenu);
+
+        function toggleMobileMenu() {
             const isExpanded = mobileMenu.classList.contains('h-0') ? false : true;
 
             // 切换菜单高度
@@ -32,7 +37,7 @@
 
             // 更新aria-expanded属性
             menuBtn.setAttribute('aria-expanded', String(!isExpanded));
-        });
+        }
 
         // 点击导航链接时添加active类
         document.querySelectorAll('.nav-link').forEach(link => {
@@ -51,4 +56,3 @@
         });
     });
 </script>
-</html>
