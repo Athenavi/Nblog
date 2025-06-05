@@ -1,84 +1,444 @@
-{% include 'nav.html' %}
-<main class="flex-grow max-w-7xl mx-auto w-full px-4 py-8">
-    <div class="md:flex">
-        <div class="md:flex-shrink-0">
-        </div>
-        <div class="p-8">
-            <a href="#"
-               class="block mt-1 text-lg leading-tight font-medium text-black hover:underline">{{ meta.title }}</a>
-            <p class="mt-2 text-gray-500">
-                {{ content|safe }}
-            </p>
-            <div class="mt-4 text-sm text-gray-500">
-                作者: {{ meta.user }} | 发布日期: {{ meta.created_at }}
-            </div>
-        </div>
-    </div>
-    <!-- 评论表单 -->
-    <div id="comment-form" class="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-medium mb-4">发表评论</h3>
-        <form action="/blog/{{ meta.id }}/comment/" method="post">
-            {% csrf_token %}
-            <div class="mb-4">
-                <label for="comment-text" class="block text-sm font-medium text-gray-700">评论内容</label>
-                <textarea name="comment-text" id="comment-text" required
-                          class="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
-            </div>
-            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-700">
-                提交评论
-            </button>
-        </form>
-    </div>
-    {% load custom_filters %}
-
-    <!-- 显示评论 -->
-    <div id="comments" class="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-medium text-gray-800 mb-4">评论</h3>
-        {% if comments %}
-            <ul class="space-y-4">
-                {% for comment in comments %}
-                    <li class="flex items-start space-x-4">
-                        <div class="flex-shrink-0">
-                            <img class="h-8 w-8 rounded-full"
-                                 src="https://ui-avatars.com/api/?name={{ comment.user.username|urlencode }}&background=3b82f6&color=fff}"
-                                 alt="用户头像" title="{{ comment.user.usernamee }}">
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <p class="text-gray-600">{{ comment.content|parse_json|get_item:'content'|safe }}</p>
-                            <p class="text-gray-400 text-sm">{{ comment.content|parse_json|get_item:'ip' }}</p>
-                            <p class="text-gray-400 text-sm ua-parser">{{ comment.content|parse_json|get_item:'ua' }}</p>
-                            <p class="text-gray-400 text-sm">{{ comment.created_at }}</p>
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="text-gray-500">还没有评论。</p>
-        {% endif %}
-    </div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ meta.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@latest/dist/ua-parser.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // 获取所有包含 UA 内容的元素
-            const uaElements = document.querySelectorAll('.ua-parser');
+    <style>
+        .container-layout {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
 
-            // 遍历每个元素并解析 UA 字符串
-            uaElements.forEach(element => {
-                const uaString = element.textContent;
-                const parser = new UAParser(uaString);
-                const result = parser.getResult();
+        .replies-container {
+            border-left: 2px solid #e5e7eb;
+            margin-top: 0.5rem;
+        }
 
-                // 构建解析后的 UA 字符串
-                const deviceType = result.device.type || 'PC';
-                const browserName = result.browser.name || 'Unknown';
-                const osName = result.os.name || 'Unknown';
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
 
-                // 更新元素内容
-                element.textContent = `${deviceType.toUpperCase()} / ${browserName} / ${osName}`;
-            });
-        });
-    </script>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+<!-- 导航栏 -->
+<nav class="bg-white shadow">
+    <div class="container-layout py-4 flex justify-between items-center">
+        <a href="#" class="text-xl font-bold text-indigo-600">技术博客</a>
+        <div class="space-x-4">
+            <a href="#" class="text-gray-600 hover:text-indigo-600">首页</a>
+            <a href="#" class="text-gray-600 hover:text-indigo-600">分类</a>
+            <a href="#" class="text-gray-600 hover:text-indigo-600">关于</a>
+        </div>
+    </div>
+</nav>
+
+<main class="flex-grow py-8">
+    <div class="container-layout">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+            <div class="p-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ meta.title }}</h1>
+                <div class="flex items-center text-gray-500 mb-4">
+                    <div class="flex items-center mr-4">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        {{ meta.user }}
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        {{ meta.created_at }}
+                    </div>
+                </div>
+                <div class="prose max-w-none">
+                    {{ content|safe }}
+                </div>
+            </div>
+        </div>
 
 
+        <!-- 评论表单 -->
+        <div id="comment-form" class="bg-white shadow rounded-lg p-6 mb-8">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">发表评论</h3>
+            <form id="comment-form-element">
+                <input type="hidden" id="article-id" value="{{ meta.id }}">
+                <input type="hidden" id="reply-to" value="0">
+
+                <div class="mb-4">
+                    <div class="flex items-center mb-2">
+                        <div id="reply-indicator" class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded text-sm hidden">
+                            正在回复 #<span id="reply-id"></span>
+                            <button type="button" id="cancel-reply" class="text-indigo-300 hover:text-indigo-500 ml-2">
+                                <i class="fas fa-times"></i> 取消
+                            </button>
+                        </div>
+                    </div>
+                    <textarea
+                            id="comment-text"
+                            rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="分享您的观点..."
+                            required
+                    ></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button
+                            id="reset-button"
+                            type="button"
+                            class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                    >
+                        重置
+                    </button>
+                    <button
+                            id="submit-comment"
+                            type="submit"
+                            class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center"
+                    >
+                        <i class="fas fa-paper-plane mr-2"></i> 提交评论
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 评论列表 -->
+        <div id="comments-container" class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-comments mr-2 text-indigo-500"></i>
+                文章评论 <span id="live-comment-count">(12)</span>
+            </h3>
+
+            <div id="comments-list" class="space-y-6">
+                <!-- 评论将通过JS动态加载 -->
+                <div class="text-center py-8 text-gray-500" id="loading-comments">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> 正在加载评论...
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
-{% include 'footer.html' %}
+
+<script>
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+        const articleId = document.getElementById('article-id').value;
+        let comments = [];
+
+        // 获取所有评论
+        fetchComments(articleId);
+
+        // 评论表单提交事件
+        document.getElementById('comment-form-element').addEventListener('submit', function (e) {
+            e.preventDefault();
+            submitComment();
+        });
+
+        // 重置表单按钮事件
+        document.getElementById('reset-button').addEventListener('click', function () {
+            resetCommentForm();
+        });
+
+        // 取消回复按钮事件
+        document.getElementById('cancel-reply').addEventListener('click', function () {
+            resetReply();
+        });
+    });
+
+    // 获取文章评论
+    function fetchComments(articleId) {
+        // 实际应用中将使用真实API端点
+        // fetch(`/api/comments/?article_id=${articleId}`)
+        fetchCommentsMock(articleId);
+    }
+
+    // 提交评论
+    function submitComment() {
+        const articleId = document.getElementById('article-id').value;
+        const replyTo = document.getElementById('reply-to').value;
+        const content = document.getElementById('comment-text').value.trim();
+
+        if (!content) {
+            alert('评论内容不能为空');
+            return;
+        }
+
+        // 显示加载状态
+        const submitBtn = document.getElementById('submit-comment');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 提交中...';
+        submitBtn.disabled = true;
+
+        // 模拟API延迟
+        setTimeout(() => {
+            // 实际应用中将向API发送POST请求
+            const mockResponse = {
+                id: Math.floor(Math.random() * 1000) + 100,
+                user: {
+                    id: 5,
+                    username: '我'
+                },
+                content: {
+                    text: content,
+                    ip: '192.168.1.10',
+                    ua: navigator.userAgent,
+                    reply_to: parseInt(replyTo) || 0
+                },
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            // 添加到评论列表
+            processNewComment(mockResponse);
+
+            // 重置按钮状态
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+
+            // 重置表单
+            resetCommentForm();
+
+            // 显示成功消息
+            showMessage('评论已成功提交！', 'success');
+
+        }, 1500);
+    }
+
+    // 处理新评论
+    function processNewComment(commentData) {
+        // 添加到内存中的评论列表
+        comments.push({
+            id: commentData.id,
+            article: commentData.article,
+            user: commentData.user,
+            content: {
+                text: commentData.content.text,
+                ip: commentData.content.ip,
+                ua: commentData.content.ua,
+                reply_to: commentData.content.reply_to
+            },
+            created_at: commentData.created_at
+        });
+
+
+        // 渲染评论列表
+        renderComments();
+    }
+
+    // 渲染评论列表
+    function renderComments() {
+        const commentsList = document.getElementById('comments-list');
+
+        if (comments.length === 0) {
+            commentsList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="far fa-comment-dots text-2xl mb-2"></i>
+                        <p>还没有评论，成为第一个评论者吧！</p>
+                    </div>
+                `;
+            return;
+        }
+
+        // 清空现有评论
+        commentsList.innerHTML = '';
+
+        // 按创建时间排序
+        const sortedComments = [...comments].sort((a, b) =>
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        // 找出顶级评论（没有回复对象或回复对象为0）
+        const topLevelComments = sortedComments.filter(
+            comment => !comment.content.reply_to || comment.content.reply_to === 0
+        );
+
+        // 渲染顶级评论
+        topLevelComments.forEach(comment => {
+            const commentElement = createCommentElement(comment);
+            commentsList.appendChild(commentElement);
+
+            // 查找回复
+            const replies = sortedComments.filter(
+                c => c.content.reply_to === comment.id
+            );
+
+            // 渲染回复
+            if (replies.length > 0) {
+                const repliesContainer = document.createElement('div');
+                repliesContainer.className = 'replies-list mt-3 pl-4';
+
+                replies.forEach(reply => {
+                    const replyElement = createCommentElement(reply);
+                    repliesContainer.appendChild(replyElement);
+                });
+
+                commentElement.querySelector('.comment-body').appendChild(repliesContainer);
+            }
+        });
+    }
+
+    // 创建单个评论元素
+    function createCommentElement(comment) {
+        // 解析日期
+        const commentDate = new Date(comment.created_at);
+        const formattedDate = `${commentDate.getFullYear()}-${(commentDate.getMonth() + 1).toString().padStart(2, '0')}-${commentDate.getDate().toString().padStart(2, '0')} ${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`;
+
+        // 创建元素
+        const commentElement = document.createElement('div');
+        commentElement.className = 'comment-item';
+        commentElement.dataset.commentId = comment.id;
+
+        // 设置内容
+        commentElement.innerHTML = `
+                <div class="flex space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="user-avatar w-10 h-10 rounded-full flex items-center justify-center text-white">
+                            ${comment.user_id}
+                        </div>
+                    </div>
+                    <div class="flex-grow comment-body">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <span class="font-semibold">${comment.user_id}</span>
+                                    <span class="text-sm text-gray-500 ml-2">${formattedDate}</span>
+                                </div>
+                                <button class="reply-button text-sm text-indigo-600 hover:text-indigo-800"
+                                        data-comment-id="${comment.id}">
+                                    <i class="fas fa-reply mr-1"></i>回复
+                                </button>
+                            </div>
+                            <div class="comment-content text-gray-700 mb-2">${comment.content.text}</div>
+                            <div class="text-xs text-gray-500">
+                                IP: ${comment.content.ip} • 浏览器: ${getBrowserName(comment.content.ua)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        // 添加回复按钮事件
+        const replyButton = commentElement.querySelector('.reply-button');
+        replyButton.addEventListener('click', function () {
+            const replyToId = this.dataset.commentId;
+            setReplyTo(replyToId);
+
+            // 滚动到评论表单
+            document.getElementById('comment-form').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+            // 聚焦到评论框
+            document.getElementById('comment-text').focus();
+        });
+
+        return commentElement;
+    }
+
+    // 设置回复目标
+    function setReplyTo(commentId) {
+        document.getElementById('reply-to').value = commentId;
+        document.getElementById('reply-id').textContent = commentId;
+        document.getElementById('reply-indicator').classList.remove('hidden');
+    }
+
+    // 重置回复状态
+    function resetReply() {
+        document.getElementById('reply-to').value = "0";
+        document.getElementById('reply-indicator').classList.add('hidden');
+    }
+
+    // 重置评论表单
+    function resetCommentForm() {
+        document.getElementById('comment-text').value = '';
+        resetReply();
+    }
+
+    // 显示消息
+    function showMessage(message, type = 'success') {
+        const messageElement = document.createElement('div');
+        messageElement.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transition transform ${
+            type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`;
+        messageElement.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+
+        document.body.appendChild(messageElement);
+
+        // 3秒后消失
+        setTimeout(() => {
+            messageElement.style.opacity = '0';
+            setTimeout(() => {
+                document.body.removeChild(messageElement);
+            }, 300);
+        }, 3000);
+    }
+
+    // 辅助函数：获取浏览器名称
+    function getBrowserName(ua) {
+        if (ua.includes('Chrome')) return 'Chrome';
+        if (ua.includes('Firefox')) return 'Firefox';
+        if (ua.includes('Safari')) return 'Safari';
+        if (ua.includes('Edge')) return 'Edge';
+        if (ua.includes('Opera')) return 'Opera';
+        return '其他';
+    }
+
+    // 模拟获取评论API（仅供演示）
+    // 模拟获取评论API（仅供演示）
+    function fetchCommentsMock(articleId) {
+        // 模拟API延迟
+        setTimeout(() => {
+            // 模拟数据获取，这里使用fetch API来获取评论数据
+            fetch(`/api/comments/${articleId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 假设后端返回的数据存储在data中
+                    comments = data;
+
+                    // 移除加载指示器
+                    document.getElementById('loading-comments').remove();
+
+                    // 渲染评论列表
+                    renderComments();
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    // 移除加载指示器即使发生错误
+                    document.getElementById('loading-comments').remove();
+                    // 添加错误提示的渲染逻辑
+                    showMessage('评论加载失败，请稍后重试', 'error');
+                });
+        }, 1200);
+    }
+
+</script>
+</body>
+</html>

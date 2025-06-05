@@ -1,11 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponse, FileResponse
-from django.shortcuts import render, get_object_or_404, redirect
+from django.http import Http404, HttpResponseForbidden, HttpResponse, FileResponse, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.utils.http import urlencode
 
 from .decorators import increase_blog_views
-from .models import BlogMeta, BlogContent, Media, Comment
+from .models import BlogMeta, BlogContent
 
 
 def index(request):
@@ -436,3 +436,23 @@ def blog_delete(request, blog_id):
     blog_meta.delete()
 
     return redirect('my_blog_list')
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response  # 使用 DRF 的 Response 类
+from .models import Comment
+from .serializers import CommentSerializer
+
+
+@api_view(['GET'])
+def comment_list(request, aid):
+    """根据文章ID过滤评论"""
+    try:
+        comments = Comment.objects.filter(article_id=aid)
+        # 在这里传递 context 给序列化器
+        serializer = CommentSerializer(comments, many=True, context={'request': request})
+        print(serializer.data)
+        # 返回 Response 对象，不需要再次传递 context
+        return Response(serializer.data)
+    except Exception as e:
+        # 返回一个错误响应
+        return Response({'error': str(e)}, status=500)

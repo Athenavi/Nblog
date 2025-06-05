@@ -1,7 +1,8 @@
 from django.urls import path
+
 from core.views import index, blog_detail, blog_edit, blog_new, media_route, register, login_view, user_profile, \
     logout_view, login_enter, edit_profile, media_upload, media_preview, comment_add, my_blog_list, blog_restore, \
-    blog_delete
+    blog_delete, comment_list
 
 urlpatterns = [
     path('', index, name='index'),
@@ -23,4 +24,5 @@ urlpatterns = [
     path('i/posts', my_blog_list, name='my_blog_list'),
     path('blog/restore/<int:blog_id>', blog_restore, name='blog_restore'),
     path('blog/delete/<int:blog_id>', blog_delete, name='blog_delete'),
+    path('api/comments/<int:aid>', comment_list, name='comment_list'),
 ]
