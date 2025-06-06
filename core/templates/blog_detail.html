@@ -28,9 +28,10 @@
 <!-- 评论表单 -->
 <div id="comment-form" class="bg-white shadow rounded-lg p-6 mb-8">
     <h3 class="text-xl font-semibold text-gray-800 mb-4">发表评论</h3>
-    <form id="comment-form-element">
+    <form id="comment-form-element" action="/blog/{{ meta.id }}/comment/" method="post">
+        {% csrf_token %}
         <input type="hidden" id="article-id" value="{{ meta.id }}">
-        <input type="hidden" id="reply-to" value="0">
+        <input type="hidden" id="reply-to" name="reply-to" value="0">
 
         <div class="mb-4">
             <div class="flex items-center mb-2">
@@ -43,6 +44,7 @@
             </div>
             <textarea
                     id="comment-text"
+                    name="comment-text"
                     rows="4"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                     placeholder="分享您的观点..."
@@ -93,12 +95,6 @@
         // 获取所有评论
         fetchComments(articleId);
 
-        // 评论表单提交事件
-        document.getElementById('comment-form-element').addEventListener('submit', function (e) {
-            e.preventDefault();
-            submitComment();
-        });
-
         // 重置表单按钮事件
         document.getElementById('reset-button').addEventListener('click', function () {
             resetCommentForm();
@@ -117,90 +113,17 @@
         fetchCommentsMock(articleId);
     }
 
-    // 提交评论
-    function submitComment() {
-        const articleId = document.getElementById('article-id').value;
-        const replyTo = document.getElementById('reply-to').value;
-        const content = document.getElementById('comment-text').value.trim();
-
-        if (!content) {
-            alert('评论内容不能为空');
-            return;
-        }
-
-        // 显示加载状态
-        const submitBtn = document.getElementById('submit-comment');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 提交中...';
-        submitBtn.disabled = true;
-
-        // 模拟API延迟
-        setTimeout(() => {
-            // 实际应用中将向API发送POST请求
-            const mockResponse = {
-                id: Math.floor(Math.random() * 1000) + 100,
-                user: {
-                    id: 5,
-                    username: '我'
-                },
-                content: {
-                    text: content,
-                    ip: '192.168.1.10',
-                    ua: navigator.userAgent,
-                    reply_to: parseInt(replyTo) || 0
-                },
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-
-            // 添加到评论列表
-            processNewComment(mockResponse);
-
-            // 重置按钮状态
-            submitBtn.innerHTML = originalBtnText;
-            submitBtn.disabled = false;
-
-            // 重置表单
-            resetCommentForm();
-
-            // 显示成功消息
-            showMessage('评论已成功提交！', 'success');
-
-        }, 1500);
-    }
-
-    // 处理新评论
-    function processNewComment(commentData) {
-        // 添加到内存中的评论列表
-        comments.push({
-            id: commentData.id,
-            article: commentData.article,
-            user: commentData.user,
-            content: {
-                text: commentData.content.text,
-                ip: commentData.content.ip,
-                ua: commentData.content.ua,
-                reply_to: commentData.content.reply_to
-            },
-            created_at: commentData.created_at
-        });
-
-
-        // 渲染评论列表
-        renderComments();
-    }
-
     // 渲染评论列表
     function renderComments() {
         const commentsList = document.getElementById('comments-list');
 
         if (comments.length === 0) {
             commentsList.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        <i class="far fa-comment-dots text-2xl mb-2"></i>
-                        <p>还没有评论，成为第一个评论者吧！</p>
-                    </div>
-                `;
+            <div class="text-center py-8 text-gray-500">
+                <i class="far fa-comment-dots text-2xl mb-2"></i>
+                <p>还没有评论，成为第一个评论者吧！</p>
+            </div>
+        `;
             return;
         }
 
@@ -214,7 +137,7 @@
 
         // 找出顶级评论（没有回复对象或回复对象为0）
         const topLevelComments = sortedComments.filter(
-            comment => !comment.content.reply_to || comment.content.reply_to === 0
+            comment => !comment.content.reply_to || String(comment.content.reply_to) === "0"
         );
 
         // 渲染顶级评论
@@ -222,24 +145,32 @@
             const commentElement = createCommentElement(comment);
             commentsList.appendChild(commentElement);
 
-            // 查找回复
-            const replies = sortedComments.filter(
-                c => c.content.reply_to === comment.id
-            );
-
-            // 渲染回复
-            if (replies.length > 0) {
-                const repliesContainer = document.createElement('div');
-                repliesContainer.className = 'replies-list mt-3 pl-4';
-
-                replies.forEach(reply => {
-                    const replyElement = createCommentElement(reply);
-                    repliesContainer.appendChild(replyElement);
-                });
-
-                commentElement.querySelector('.comment-body').appendChild(repliesContainer);
-            }
+            // 查找并渲染所有层级的回复
+            renderReplies(comment.id, sortedComments, commentElement);
         });
+    }
+
+    // 递归渲染回复
+    function renderReplies(parentId, allComments, parentElement) {
+        // 查找直接回复
+        const replies = allComments.filter(
+            c => String(c.content.reply_to) === String(parentId)
+        );
+
+        if (replies.length > 0) {
+            const repliesContainer = document.createElement('div');
+            repliesContainer.className = 'replies-list mt-3 pl-4 border-l-2 border-gray-100';
+
+            replies.forEach(reply => {
+                const replyElement = createCommentElement(reply);
+                repliesContainer.appendChild(replyElement);
+
+                // 递归渲染更深层级的回复
+                renderReplies(reply.id, allComments, replyElement);
+            });
+
+            parentElement.querySelector('.comment-body').appendChild(repliesContainer);
+        }
     }
 
     // 创建单个评论元素
