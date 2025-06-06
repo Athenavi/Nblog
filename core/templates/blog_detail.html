@@ -167,17 +167,54 @@
             const commentElement = createCommentElement(comment);
             commentsList.appendChild(commentElement);
 
-            // 获取这个顶级评论的所有后代回复（按时间排序）
-            const allReplies = getAllReplies(comment.id, sortedComments);
-            if (allReplies.length > 0) {
-                const repliesContainer = document.createElement('div');
-                repliesContainer.className = 'replies-container mt-3 ml-8 pl-4 border-l-2 border-gray-100';
+            // 获取所有直接回复（二层）
+            const directReplies = sortedComments.filter(
+                c => parseInt(c.content.reply_to) === comment.id
+            );
 
-                allReplies.forEach(reply => {
-                    const replyElement = createReplyElement(reply);
-                    repliesContainer.appendChild(replyElement);
+            // 创建回复容器
+            const repliesContainer = document.createElement('div');
+            repliesContainer.className = 'replies-container mt-3 ml-8 pl-4 border-l-2 border-gray-100';
+            repliesContainer.id = `replies-${comment.id}`;
+
+            // 添加展开/收起控制按钮
+            if (directReplies.length > 0) {
+                const toggleButton = document.createElement('button');
+                toggleButton.className = 'toggle-replies text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded hover:bg-indigo-50 mb-2';
+                toggleButton.innerHTML = `<i class="fas fa-plus-circle mr-1"></i> 展开回复 (${directReplies.length})`;
+                toggleButton.dataset.commentId = comment.id;
+                toggleButton.dataset.expanded = "false";
+
+                toggleButton.addEventListener('click', function() {
+                    const commentId = this.dataset.commentId;
+                    const expanded = this.dataset.expanded === "true";
+
+                    if (expanded) {
+                        this.innerHTML = `<i class="fas fa-plus-circle mr-1"></i> 展开回复 (${directReplies.length})`;
+                        this.dataset.expanded = "false";
+                        document.getElementById(`replies-content-${commentId}`).classList.add('hidden');
+                    } else {
+                        this.innerHTML = `<i class="fas fa-minus-circle mr-1"></i> 收起回复`;
+                        this.dataset.expanded = "true";
+                        document.getElementById(`replies-content-${commentId}`).classList.remove('hidden');
+                    }
                 });
 
+                repliesContainer.appendChild(toggleButton);
+
+                // 创建回复内容容器（默认隐藏）
+                const repliesContent = document.createElement('div');
+                repliesContent.id = `replies-content-${comment.id}`;
+                repliesContent.className = 'hidden space-y-3';
+
+                // 渲染所有后代回复（平铺结构）
+                const allReplies = getAllReplies(comment.id, sortedComments);
+                allReplies.forEach(reply => {
+                    const replyElement = createReplyElement(reply);
+                    repliesContent.appendChild(replyElement);
+                });
+
+                repliesContainer.appendChild(repliesContent);
                 commentElement.appendChild(repliesContainer);
             }
         });
@@ -189,10 +226,6 @@
         const directReplies = allComments.filter(c => {
             const replyTo = c.content.reply_to;
             const replyToNum = parseInt(replyTo);
-            // 如果转换失败，则跳过
-            if (isNaN(replyToNum)) {
-                return false;
-            }
             return replyToNum === commentId;
         });
 
