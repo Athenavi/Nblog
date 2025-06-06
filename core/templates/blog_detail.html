@@ -25,6 +25,7 @@
         </div>
     </div>
 </div>
+
 <!-- 评论表单 -->
 <div id="comment-form" class="bg-white shadow rounded-lg p-6 mb-8">
     <h3 class="text-xl font-semibold text-gray-800 mb-4">发表评论</h3>
@@ -75,22 +76,22 @@
 <div id="comments-container" class="bg-white shadow rounded-lg p-6">
     <h3 class="text-xl font-semibold text-gray-800 mb-4">
         <i class="fas fa-comments mr-2 text-indigo-500"></i>
-        文章评论 <span id="live-comment-count">(12)</span>
+        文章评论 <span id="live-comment-count">(0)</span>
     </h3>
 
     <div id="comments-list" class="space-y-6">
-        <!-- 评论将通过JS动态加载 -->
         <div class="text-center py-8 text-gray-500" id="loading-comments">
             <i class="fas fa-spinner fa-spin mr-2"></i> 正在加载评论...
         </div>
     </div>
 </div>
 {% include 'footer.html' %}
+
 <script>
-    // 页面加载完成后执行
     document.addEventListener('DOMContentLoaded', function () {
         const articleId = document.getElementById('article-id').value;
         let comments = [];
+        let commentMap = new Map();
 
         // 获取所有评论
         fetchComments(articleId);
@@ -108,9 +109,31 @@
 
     // 获取文章评论
     function fetchComments(articleId) {
-        // 实际应用中将使用真实API端点
-        // fetch(`/api/comments/?article_id=${articleId}`)
-        fetchCommentsMock(articleId);
+        fetch(`/api/comments/${articleId}`)
+            .then(response => response.json())
+            .then(data => {
+                comments = data;
+                buildCommentMap();
+                document.getElementById('live-comment-count').textContent = `(${comments.length})`;
+                document.getElementById('loading-comments').remove();
+                renderComments();
+            })
+            .catch(error => {
+                console.error('获取评论失败:', error);
+                document.getElementById('loading-comments').innerHTML = `
+                    <div class="text-red-500">
+                        <i class="fas fa-exclamation-circle mr-2"></i>评论加载失败，请刷新重试
+                    </div>
+                `;
+            });
+    }
+
+    // 构建评论映射表
+    function buildCommentMap() {
+        commentMap = new Map();
+        comments.forEach(comment => {
+            commentMap.set(comment.id, comment);
+        });
     }
 
     // 渲染评论列表
@@ -119,25 +142,24 @@
 
         if (comments.length === 0) {
             commentsList.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-                <i class="far fa-comment-dots text-2xl mb-2"></i>
-                <p>还没有评论，成为第一个评论者吧！</p>
-            </div>
-        `;
+                <div class="text-center py-8 text-gray-500">
+                    <i class="far fa-comment-dots text-2xl mb-2"></i>
+                    <p>还没有评论，成为第一个评论者吧！</p>
+                </div>
+            `;
             return;
         }
 
-        // 清空现有评论
         commentsList.innerHTML = '';
 
-        // 按创建时间排序
+        // 按创建时间排序（从旧到新）
         const sortedComments = [...comments].sort((a, b) =>
-            new Date(b.created_at) - new Date(a.created_at)
+            new Date(a.created_at) - new Date(b.created_at)
         );
 
-        // 找出顶级评论（没有回复对象或回复对象为0）
+        // 找出顶级评论
         const topLevelComments = sortedComments.filter(
-            comment => !comment.content.reply_to || String(comment.content.reply_to) === "0"
+            comment => !comment.content.reply_to || parseInt(comment.content.reply_to) === 0
         );
 
         // 渲染顶级评论
@@ -145,91 +167,156 @@
             const commentElement = createCommentElement(comment);
             commentsList.appendChild(commentElement);
 
-            // 查找并渲染所有层级的回复
-            renderReplies(comment.id, sortedComments, commentElement);
+            // 获取这个顶级评论的所有后代回复（按时间排序）
+            const allReplies = getAllReplies(comment.id, sortedComments);
+            if (allReplies.length > 0) {
+                const repliesContainer = document.createElement('div');
+                repliesContainer.className = 'replies-container mt-3 ml-8 pl-4 border-l-2 border-gray-100';
+
+                allReplies.forEach(reply => {
+                    const replyElement = createReplyElement(reply);
+                    repliesContainer.appendChild(replyElement);
+                });
+
+                commentElement.appendChild(repliesContainer);
+            }
         });
     }
 
-    // 递归渲染回复
-    function renderReplies(parentId, allComments, parentElement) {
+    // 获取一个评论的所有后代回复（平铺结构）
+    function getAllReplies(commentId, allComments) {
         // 查找直接回复
-        const replies = allComments.filter(
-            c => String(c.content.reply_to) === String(parentId)
-        );
+        const directReplies = allComments.filter(c => {
+            const replyTo = c.content.reply_to;
+            const replyToNum = parseInt(replyTo);
+            // 如果转换失败，则跳过
+            if (isNaN(replyToNum)) {
+                return false;
+            }
+            return replyToNum === commentId;
+        });
 
-        if (replies.length > 0) {
-            const repliesContainer = document.createElement('div');
-            repliesContainer.className = 'replies-list mt-3 pl-4 border-l-2 border-gray-100';
+        let allChildren = [];
+        directReplies.forEach(reply => {
+            allChildren.push(reply);
+            // 递归获取后代
+            const childReplies = getAllReplies(reply.id, allComments);
+            allChildren = allChildren.concat(childReplies);
+        });
 
-            replies.forEach(reply => {
-                const replyElement = createCommentElement(reply);
-                repliesContainer.appendChild(replyElement);
-
-                // 递归渲染更深层级的回复
-                renderReplies(reply.id, allComments, replyElement);
-            });
-
-            parentElement.querySelector('.comment-body').appendChild(repliesContainer);
-        }
+        // 按时间排序（从旧到新）
+        allChildren.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        return allChildren;
     }
 
-    // 创建单个评论元素
+    // 创建评论元素（主评论）
     function createCommentElement(comment) {
-        // 解析日期
         const commentDate = new Date(comment.created_at);
-        const formattedDate = `${commentDate.getFullYear()}-${(commentDate.getMonth() + 1).toString().padStart(2, '0')}-${commentDate.getDate().toString().padStart(2, '0')} ${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`;
+        const formattedDate = formatDate(commentDate);
 
-        // 创建元素
         const commentElement = document.createElement('div');
-        commentElement.className = 'comment-item';
+        commentElement.className = 'comment-item bg-gray-50 rounded-lg p-4';
         commentElement.dataset.commentId = comment.id;
 
-        // 设置内容
         commentElement.innerHTML = `
-                <div class="flex space-x-4">
-                    <div class="flex-shrink-0">
-                        <div class="user-avatar w-10 h-10 rounded-full flex items-center justify-center text-white">
-                            ${comment.user_id}
-                        </div>
-                    </div>
-                    <div class="flex-grow comment-body">
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="font-semibold">${comment.user_id}</span>
-                                    <span class="text-sm text-gray-500 ml-2">${formattedDate}</span>
-                                </div>
-                                <button class="reply-button text-sm text-indigo-600 hover:text-indigo-800"
-                                        data-comment-id="${comment.id}">
-                                    <i class="fas fa-reply mr-1"></i>回复
-                                </button>
-                            </div>
-                            <div class="comment-content text-gray-700 mb-2">${comment.content.text}</div>
-                            <div class="text-xs text-gray-500">
-                                IP: ${comment.content.ip} • 浏览器: ${getBrowserName(comment.content.ua)}
-                            </div>
-                        </div>
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="user-avatar w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+                        ${comment.user_id}
                     </div>
                 </div>
-            `;
+                <div class="ml-3 flex-grow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-semibold text-gray-800">${comment.user_id}</span>
+                            <span class="text-xs text-gray-500 ml-2">${formattedDate}</span>
+                        </div>
+                        <button class="reply-button text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded hover:bg-indigo-50"
+                                data-comment-id="${comment.id}">
+                            <i class="fas fa-reply mr-1"></i>回复
+                        </button>
+                    </div>
+                    <div class="comment-content text-gray-700 my-2">${comment.content.text}</div>
+                    <div class="text-xs text-gray-500 flex items-center">
+                        <span class="mr-3">#${comment.id}</span>
+                        <span>IP: ${comment.content.ip}</span>
+                        <span class="mx-2">•</span>
+                        <span>${getBrowserName(comment.content.ua)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
 
         // 添加回复按钮事件
         const replyButton = commentElement.querySelector('.reply-button');
         replyButton.addEventListener('click', function () {
             const replyToId = this.dataset.commentId;
             setReplyTo(replyToId);
-
-            // 滚动到评论表单
-            document.getElementById('comment-form').scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-
-            // 聚焦到评论框
+            document.getElementById('comment-form').scrollIntoView({behavior: 'smooth'});
             document.getElementById('comment-text').focus();
         });
 
         return commentElement;
+    }
+
+    // 创建回复元素（所有回复平铺显示）
+    function createReplyElement(reply) {
+        const replyDate = new Date(reply.created_at);
+        const formattedDate = formatDate(replyDate);
+
+        // 获取被回复的评论信息
+        const parentComment = commentMap.get(parseInt(reply.content.reply_to));
+        const parentUsername = parentComment ? parentComment.user_id : '未知用户';
+
+        const replyElement = document.createElement('div');
+        replyElement.className = 'reply-item bg-white border border-gray-100 rounded-lg p-3 mb-3 shadow-sm';
+        replyElement.dataset.commentId = reply.id;
+
+        replyElement.innerHTML = `
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="user-avatar w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                        ${reply.user_id}
+                    </div>
+                </div>
+                <div class="ml-2 flex-grow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-medium text-gray-800 text-sm">${reply.user_id}</span>
+                            <span class="text-xs text-gray-500 ml-1">${formattedDate}</span>
+                        </div>
+                        <button class="reply-button text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded hover:bg-indigo-50"
+                                data-comment-id="${reply.id}">
+                            <i class="fas fa-reply mr-1"></i>回复
+                        </button>
+                    </div>
+                    <div class="text-xs text-indigo-600 mb-1">
+                        回复 <span class="font-medium">@${parentUsername}</span>
+                    </div>
+                    <div class="comment-content text-gray-700 text-sm my-1">${reply.content.text}</div>
+                    <div class="text-xs text-gray-500 flex items-center">
+                        <span class="mr-3">#${reply.id}</span>
+                        <span>${getBrowserName(reply.content.ua)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 添加回复按钮事件
+        const replyButton = replyElement.querySelector('.reply-button');
+        replyButton.addEventListener('click', function () {
+            const replyToId = this.dataset.commentId;
+            setReplyTo(replyToId);
+            document.getElementById('comment-form').scrollIntoView({behavior: 'smooth'});
+            document.getElementById('comment-text').focus();
+        });
+
+        return replyElement;
+    }
+
+    // 格式化日期
+    function formatDate(date) {
+        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     }
 
     // 设置回复目标
@@ -237,6 +324,9 @@
         document.getElementById('reply-to').value = commentId;
         document.getElementById('reply-id').textContent = commentId;
         document.getElementById('reply-indicator').classList.remove('hidden');
+
+        // 滚动到评论框并聚焦
+        document.getElementById('comment-text').focus();
     }
 
     // 重置回复状态
@@ -251,30 +341,6 @@
         resetReply();
     }
 
-    // 显示消息
-    function showMessage(message, type = 'success') {
-        const messageElement = document.createElement('div');
-        messageElement.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transition transform ${
-            type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`;
-        messageElement.innerHTML = `
-                <div class="flex items-center">
-                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
-                    <span>${message}</span>
-                </div>
-            `;
-
-        document.body.appendChild(messageElement);
-
-        // 3秒后消失
-        setTimeout(() => {
-            messageElement.style.opacity = '0';
-            setTimeout(() => {
-                document.body.removeChild(messageElement);
-            }, 300);
-        }, 3000);
-    }
-
     // 辅助函数：获取浏览器名称
     function getBrowserName(ua) {
         if (ua.includes('Chrome')) return 'Chrome';
@@ -282,40 +348,6 @@
         if (ua.includes('Safari')) return 'Safari';
         if (ua.includes('Edge')) return 'Edge';
         if (ua.includes('Opera')) return 'Opera';
-        return '其他';
+        return '其他浏览器';
     }
-
-    // 模拟获取评论API（仅供演示）
-    // 模拟获取评论API（仅供演示）
-    function fetchCommentsMock(articleId) {
-        // 模拟API延迟
-        setTimeout(() => {
-            // 模拟数据获取，这里使用fetch API来获取评论数据
-            fetch(`/api/comments/${articleId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // 假设后端返回的数据存储在data中
-                    comments = data;
-
-                    // 移除加载指示器
-                    document.getElementById('loading-comments').remove();
-
-                    // 渲染评论列表
-                    renderComments();
-                })
-                .catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                    // 移除加载指示器即使发生错误
-                    document.getElementById('loading-comments').remove();
-                    // 添加错误提示的渲染逻辑
-                    showMessage('评论加载失败，请稍后重试', 'error');
-                });
-        }, 1200);
-    }
-
 </script>
