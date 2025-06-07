@@ -25,10 +25,13 @@
             </div>
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">{{ meta.title }}</h1>
             <div class="flex flex-wrap gap-2 mb-6">
-                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full dark:bg-blue-900/30 dark:text-blue-300">Web开发</span>
+                {% load split_tags %}
+                {% for tag in meta.tags|split:',' %}
+                    <a href="#"
+                       class="px-3 py-1 {{ tag|color }} text-gray-800 text-sm rounded-full dark:bg-gray-700/30 dark:text-gray-300">{{ tag }}</a>
+                {% endfor %}
             </div>
         </header>
-
         <!-- 文章内容 - 适配深色模式的prose区域 -->
         <div class="prose dark:prose-invert max-w-none">
             {{ content|safe }}
@@ -55,7 +58,9 @@
 
             <div class="flex flex-wrap gap-3">
                 <span class="text-sm text-gray-600 dark:text-gray-400">标签: </span>
-                <a href="#" class="text-sm text-primary hover:underline dark:text-primary-dark">#深色模式</a>
+                {% for tag in meta.tags|split:',' %}
+                    <a href="#" class="text-sm text-primary hover:underline dark:text-primary-dark">#{{ tag }}</a>
+                {% endfor %}
             </div>
         </footer>
     </article>
