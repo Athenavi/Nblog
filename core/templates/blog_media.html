@@ -298,7 +298,7 @@
                     </thead>
                     <tbody class=" divide-y divide-gray-200">
                     {% for media in media_list %}
-                        <tr class="media-tr" data-id="{{ media.id }}">
+                        <tr class="media-tr" data-id="{{ media.hash }}" data-target="{{ media.id }}">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <i class="
@@ -369,7 +369,7 @@
                                 alert('媒体文件已成功删除');
 
                                 // 从表格中移除该行
-                                const tableRow = document.querySelector(`tr.media-tr[data-id="${media_id}"]`);
+                                const tableRow = document.querySelector(`tr.media-tr[data-target="${media_id}"]`);
                                 if (tableRow) {
                                     tableRow.parentNode.removeChild(tableRow);
                                 }
@@ -591,8 +591,6 @@
 </body>
 <!-- 页脚 -->
 {% include "footer.html" %}
-</html>
-
 <!-- 文件预览模态框 -->
 <div class="preview-modal fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
      id="previewModal"
