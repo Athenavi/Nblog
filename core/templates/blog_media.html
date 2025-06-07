@@ -225,7 +225,7 @@
              class="grid-view grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
             {% for media in media_list %}
                 <div class="media-card bg-white rounded-xl shadow-sm overflow-hidden transition duration-300 cursor-pointer"
-                     data-id="{{ media.hash }}">
+                     data-id="{{ media.hash }}" data-target="{{ media.id }}">
                     <div class="relative">
                         <div class="h-48 bg-gradient-to-r
                             {% if '.jpg' in media.original_filename or '.jpeg' in media.original_filename or '.png' in media.original_filename %}
@@ -394,9 +394,18 @@
                         .then(data => {
                             if (data.message === '删除成功') {
                                 alert('媒体文件已成功删除');
+
                                 // 从表格中移除该行
-                                const row = document.querySelector(`tr[data-id="${media_id}"]`);
-                                row.parentNode.removeChild(row);
+                                const tableRow = document.querySelector(`tr.media-tr[data-id="${media_id}"]`);
+                                if (tableRow) {
+                                    tableRow.parentNode.removeChild(tableRow);
+                                }
+
+                                // 从卡片视图中移除相应的 div
+                                const cardDiv = document.querySelector(`div.media-card[data-target="${media_id}"]`);
+                                if (cardDiv) {
+                                    cardDiv.parentNode.removeChild(cardDiv);
+                                }
                             } else {
                                 alert('删除失败: ' + data.message);
                             }
@@ -413,6 +422,7 @@
                     return cookieValue ? cookieValue.pop() : '';
                 }
             }
+
         </script>
 
 
