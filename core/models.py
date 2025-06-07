@@ -1,6 +1,6 @@
 import markdown
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.db import models
+from django.db import models, transaction
 
 
 class PublishedManager(models.Manager):
@@ -238,6 +238,31 @@ class Media(models.Model):
             print(f"An error occurred: {e}")
         return None, None, None, None, None
 
+    @staticmethod
+    def delete_media_by_id(user_id, media_id):
+        try:
+            with transaction.atomic():
+                media = Media.objects.get(id=media_id, user_id=user_id)
+                file_hash_obj = FileHash.objects.filter(hash=media.hash).first()  # 获取文件哈希对象
+                if file_hash_obj:
+                    # 减少文件的引用次数
+                    file_hash_obj.reference_count -= 1
+                    if file_hash_obj.reference_count == 0:
+                        # 如果引用次数为0，则删除文件哈希对象
+                        file_hash_obj.delete()
+                    else:
+                        # 否则，只更新引用次数
+                        file_hash_obj.save()
+                # 删除媒体对象
+                media.delete()
+                return True
+        except Media.DoesNotExist:
+            print(f"Media with id {media_id} does not exist.")
+        except Exception as e:
+            print(f"An error occurred while deleting media: {e}")
+
+        return False
+
 
 class FileHash(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -297,5 +322,3 @@ class Comment(models.Model):
             return comments
         except Comment.DoesNotExist:
             return None
-
-

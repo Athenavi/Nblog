@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import Http404, HttpResponseForbidden, HttpResponse, FileResponse, JsonResponse
+from django.http import Http404, HttpResponseForbidden, HttpResponse, FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils.http import urlencode
 
@@ -437,6 +437,7 @@ def blog_delete(request, blog_id):
 
     return redirect('my_blog_list')
 
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response  # 使用 DRF 的 Response 类
 from .models import Comment
@@ -456,3 +457,20 @@ def comment_list(request, aid):
     except Exception as e:
         # 返回一个错误响应
         return Response({'error': str(e)}, status=500)
+
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def media_delete(request, media_id):
+    user = request.user
+    try:
+        if Media.delete_media_by_id(user_id=user.id, media_id=media_id):
+            return JsonResponse({'message': '删除成功'})
+        else:
+            return JsonResponse({'message': '删除失败'}, status=500)
+    except Exception as e:
+        # 返回一个错误响应
+        return JsonResponse({'error': str(e)}, status=500)

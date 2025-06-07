@@ -325,22 +325,22 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                     {% for media in media_list %}
-                        <tr class="media-tr" data-id="{{ media.hash }}">
+                        <tr class="media-tr" data-id="{{ media.id }}">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <i class="
-                                    {% if '.jpg' in media.original_filename or '.jpeg' in media.original_filename or '.png' in media.original_filename %}
-                                        fas fa-image text-blue-500
-                                    {% elif '.pdf' in media.original_filename %}
-                                        fas fa-file-pdf text-purple-600
-                                    {% elif '.mp4' in media.original_filename or '.mov' in media.original_filename %}
-                                        fas fa-video text-orange-500
-                                    {% elif '.mp3' in media.original_filename or '.wav' in media.original_filename %}
-                                        fas fa-file-audio text-green-500
-                                    {% else %}
-                                        fas fa-file text-gray-500
-                                    {% endif %}
-                                    mr-2 file-icon">
+                                {% if '.jpg' in media.original_filename or '.jpeg' in media.original_filename or '.png' in media.original_filename %}
+                                    fas fa-image text-blue-500
+                                {% elif '.pdf' in media.original_filename %}
+                                    fas fa-file-pdf text-purple-600
+                                {% elif '.mp4' in media.original_filename or '.mov' in media.original_filename %}
+                                    fas fa-video text-orange-500
+                                {% elif '.mp3' in media.original_filename or '.wav' in media.original_filename %}
+                                    fas fa-file-audio text-green-500
+                                {% else %}
+                                    fas fa-file text-gray-500
+                                {% endif %}
+                                mr-2 file-icon">
                                     </i>
                                     <div class="text-sm font-medium text-gray-900 truncate max-w-xs">{{ media.original_filename }}</div>
                                 </div>
@@ -358,7 +358,8 @@
                                 <button class="text-primary hover:text-secondary mr-3">
                                     <i class="fas fa-download"></i>
                                 </button>
-                                <button class="text-red-500 hover:text-red-700">
+                                <button class="text-red-500 hover:text-red-700"
+                                        onclick="deleteMedia(event, {{ media.id }})">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -375,6 +376,44 @@
                 </table>
             </div>
         </div>
+
+        <script>
+            function deleteMedia(event, media_id) {
+                event.preventDefault(); // 阻止默认行为
+
+                if (confirm('确定要删除此媒体文件吗？')) {
+                    fetch(`/media-delete/${media_id}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCSRFToken(), // 添加 CSRF 令牌
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({media_id: media_id})
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.message === '删除成功') {
+                                alert('媒体文件已成功删除');
+                                // 从表格中移除该行
+                                const row = document.querySelector(`tr[data-id="${media_id}"]`);
+                                row.parentNode.removeChild(row);
+                            } else {
+                                alert('删除失败: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('发生错误，请重试');
+                        });
+                }
+
+                function getCSRFToken() {
+                    // 获取 CSRF 令牌
+                    const cookieValue = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)');
+                    return cookieValue ? cookieValue.pop() : '';
+                }
+            }
+        </script>
 
 
         <!-- 分页控件 -->
