@@ -1,12 +1,6 @@
-<footer class="bg-gray-800 text-white py-6">
-    <div class="max-w-7xl mx-auto px-4 text-center">
-        <p>© 2023 nblog - 简洁高效的博客平台</p>
-        <div class="mt-3 flex justify-center space-x-4">
-            <a href="#" class="hover:text-primary transition-colors"><i class="fab fa-github"></i></a>
-            <a href="#" class="hover:text-primary transition-colors"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="hover:text-primary transition-colors"><i class="fab fa-facebook"></i></a>
-            <a href="#" class="hover:text-primary transition-colors"><i class="fab fa-instagram"></i></a>
-        </div>
+<footer class="bg-gray-800 text-white py-12">
+    <div class="border-t border-gray-700 mt-12 pt-8 text-center text-gray-400">
+        <p>© 2023 nblog - 简洁高效的博客平台。保留所有权利。</p>
     </div>
 </footer>
 <script>
@@ -15,14 +9,10 @@
         const mobileMenu = document.getElementById('mobile-menu');
         const openIcon = document.getElementById('open-icon');
         const closeIcon = document.getElementById('close-icon');
-
         menuBtn.addEventListener('click', toggleMobileMenu);
 
-        // 添加点击关闭图标时的事件监听器
-        closeIcon.addEventListener('click', toggleMobileMenu);
-
         function toggleMobileMenu() {
-            const isExpanded = mobileMenu.classList.contains('h-0') ? false : true;
+            const isExpanded = mobileMenu.style.height !== '0px' && mobileMenu.style.height !== '';
 
             // 切换菜单高度
             if (isExpanded) {
@@ -46,7 +36,7 @@
                 this.classList.add('active');
 
                 // 如果是移动端菜单，点击后关闭菜单
-                if (this.parentElement.id === 'mobile-menu') {
+                if (this.parentElement.parentElement.id === 'mobile-menu') {
                     mobileMenu.style.height = '0';
                     openIcon.classList.remove('hidden');
                     closeIcon.classList.add('hidden');
