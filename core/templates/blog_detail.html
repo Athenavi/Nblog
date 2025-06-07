@@ -1,5 +1,5 @@
 {% include 'nav.html' %}
-<div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+<div class="rounded-lg shadow-md overflow-hidden mb-6">
     <div class="p-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ meta.title }}</h1>
         <div class="flex items-center text-gray-500 mb-4">
@@ -20,14 +20,14 @@
                 {{ meta.created_at }}
             </div>
         </div>
-        <div class="prose max-w-none">
+        <div class="prose dark:prose-invert max-w-none">
             {{ content|safe }}
         </div>
     </div>
 </div>
 
 <!-- 评论表单 -->
-<div id="comment-form" class="bg-white shadow rounded-lg p-6 mb-8">
+<div id="comment-form" class="shadow rounded-lg p-6 mb-8">
     <h3 class="text-xl font-semibold text-gray-800 mb-4">发表评论</h3>
     <form id="comment-form-element" action="/blog/{{ meta.id }}/comment/" method="post">
         {% csrf_token %}
@@ -73,7 +73,7 @@
 </div>
 
 <!-- 评论列表 -->
-<div id="comments-container" class="bg-white shadow rounded-lg p-6">
+<div id="comments-container" class="shadow rounded-lg p-6">
     <h3 class="text-xl font-semibold text-gray-800 mb-4">
         <i class="fas fa-comments mr-2 text-indigo-500"></i>
         文章评论 <span id="live-comment-count">(0)</span>
@@ -185,7 +185,7 @@
                 toggleButton.dataset.commentId = comment.id;
                 toggleButton.dataset.expanded = "false";
 
-                toggleButton.addEventListener('click', function() {
+                toggleButton.addEventListener('click', function () {
                     const commentId = this.dataset.commentId;
                     const expanded = this.dataset.expanded === "true";
 
@@ -302,7 +302,7 @@
         const parentUsername = parentComment ? parentComment.user_id : '未知用户';
 
         const replyElement = document.createElement('div');
-        replyElement.className = 'reply-item bg-white border border-gray-100 rounded-lg p-3 mb-3 shadow-sm';
+        replyElement.className = 'reply-item border border-gray-100 rounded-lg p-3 mb-3 shadow-sm';
         replyElement.dataset.commentId = reply.id;
 
         replyElement.innerHTML = `
