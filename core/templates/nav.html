@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nblog - 深色模式支持</title>
+    <title>nblog</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class', // 使用class而不是media，以便用户手动切换
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -79,60 +81,61 @@
                 @apply content-[''] inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition duration-200 ease-in-out;
                 @apply translate-x-1 dark:translate-x-6;
             }
-        }
-        /* 文章内容适配深色模式 */
-        .prose {
-            @apply max-w-none text-gray-700 dark:text-gray-300;
-        }
 
-        .prose h1,
-        .prose h2,
-        .prose h3,
-        .prose h4,
-        .prose h5,
-        .prose h6 {
-            @apply text-gray-900 dark:text-gray-100;
-        }
+            /* 文章内容适配深色模式 */
+            .prose {
+                @apply max-w-none text-gray-700 dark:text-gray-300;
+            }
 
-        .prose a {
-            @apply text-primary hover:text-primary-dark dark:text-primary-dark dark:hover:text-primary transition-colors;
-            @apply no-underline hover:underline;
-        }
+            .prose h1,
+            .prose h2,
+            .prose h3,
+            .prose h4,
+            .prose h5,
+            .prose h6 {
+                @apply text-gray-900 dark:text-gray-100;
+            }
 
-        .prose blockquote {
-            @apply border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50;
-        }
+            .prose a {
+                @apply text-primary hover:text-primary-dark dark:text-primary-dark dark:hover:text-primary transition-colors;
+                @apply no-underline hover:underline;
+            }
 
-        .prose code:not(pre code) {
-            @apply bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-300 px-1.5 py-0.5 rounded;
-        }
+            .prose blockquote {
+                @apply border-l-4 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50;
+            }
 
-        .prose pre {
-            @apply bg-gray-800 dark:bg-gray-900 rounded-lg overflow-x-auto p-4;
-        }
+            .prose code:not(pre code) {
+                @apply bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-300 px-1.5 py-0.5 rounded;
+            }
 
-        .prose table {
-            @apply w-full border-collapse;
-        }
+            .prose pre {
+                @apply bg-gray-800 dark:bg-gray-900 rounded-lg overflow-x-auto p-4;
+            }
 
-        .prose th {
-            @apply bg-gray-100 dark:bg-gray-800 text-left py-2 px-4 border-b border-gray-300 dark:border-gray-700;
-        }
+            .prose table {
+                @apply w-full border-collapse;
+            }
 
-        .prose td {
-            @apply py-2 px-4 border-b border-gray-200 dark:border-gray-700;
-        }
+            .prose th {
+                @apply bg-gray-100 dark:bg-gray-800 text-left py-2 px-4 border-b border-gray-300 dark:border-gray-700;
+            }
 
-        .prose tr:hover {
-            @apply bg-gray-50 dark:bg-gray-800/30;
-        }
+            .prose td {
+                @apply py-2 px-4 border-b border-gray-200 dark:border-gray-700;
+            }
 
-        .prose img {
-            @apply rounded-lg shadow-md mx-auto my-6;
-        }
+            .prose tr:hover {
+                @apply bg-gray-50 dark:bg-gray-800/30;
+            }
 
-        .prose hr {
-            @apply border-gray-200 dark:border-gray-700;
+            .prose img {
+                @apply rounded-lg shadow-md mx-auto my-6;
+            }
+
+            .prose hr {
+                @apply border-gray-200 dark:border-gray-700;
+            }
         }
 
         .h-0 {
@@ -171,7 +174,9 @@
             </a>
             <!-- 桌面导航链接 -->
             <div class="hidden md:flex space-x-1">
-                <!-- 导航链接将在后面添加 -->
+                <a href="/" class="nav-link active">首页</a>
+                <a href="/media" class="nav-link">媒体</a>
+                <a href="/i/posts" class="nav-link">我的文章</a>
             </div>
             <!-- 右侧区域 -->
             <div class="flex items-center space-x-4">
@@ -241,94 +246,3 @@
         </div>
     </div>
 </nav>
-
-<script>
-    // 主题切换功能
-    document.addEventListener('DOMContentLoaded', function () {
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const openIcon = document.getElementById('open-icon');
-        const closeIcon = document.getElementById('close-icon');
-        const themeToggle = document.getElementById('theme-toggle');
-        const systemThemeBtn = document.getElementById('system-theme-btn');
-
-        // 移动菜单切换
-        mobileMenuBtn.addEventListener('click', () => {
-            const isOpen = mobileMenu.classList.contains('h-0');
-
-            if (isOpen) {
-                mobileMenu.classList.remove('h-0');
-                mobileMenu.style.height = 'auto';
-                const height = mobileMenu.scrollHeight + 'px';
-                mobileMenu.style.height = '0';
-
-                // 触发重绘
-                mobileMenu.offsetHeight;
-
-                mobileMenu.style.height = height;
-                setTimeout(() => {
-                    mobileMenu.style.height = 'auto';
-                }, 300);
-            } else {
-                mobileMenu.style.height = mobileMenu.scrollHeight + 'px';
-
-                // 触发重绘
-                mobileMenu.offsetHeight;
-
-                mobileMenu.style.height = '0';
-                setTimeout(() => {
-                    mobileMenu.classList.add('h-0');
-                }, 300);
-            }
-
-            openIcon.classList.toggle('hidden');
-            closeIcon.classList.toggle('hidden');
-        });
-
-        // 主题管理
-        function applyTheme(theme) {
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            } else if (theme === 'light') {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            } else {
-                localStorage.removeItem('theme');
-                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            }
-        }
-
-        // 初始化主题
-        const savedTheme = localStorage.getItem('theme');
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-        if (savedTheme) {
-            applyTheme(savedTheme);
-        } else {
-            applyTheme(systemDark ? 'dark' : 'light');
-        }
-
-        // 主题切换按钮
-        themeToggle.addEventListener('click', () => {
-            const isDark = document.documentElement.classList.contains('dark');
-            applyTheme(isDark ? 'light' : 'dark');
-        });
-
-        // 系统主题按钮
-        systemThemeBtn.addEventListener('click', () => {
-            applyTheme('system');
-        });
-
-        // 监听系统主题变化
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            if (!localStorage.getItem('theme')) {
-                applyTheme(e.matches ? 'dark' : 'light');
-            }
-        });
-    });
-</script>
