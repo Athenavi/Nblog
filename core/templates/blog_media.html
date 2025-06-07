@@ -1,131 +1,106 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>媒体资源管理</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/static/css/dropzone.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#4361ee',
-                        secondary: '#3f37c9',
-                        dark: '#1e293b',
-                        light: '#f8fafc'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
-        body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background-color: #f1f5f9;
-        }
+    body {
+        font-family: 'Noto Sans SC', sans-serif;
+    }
 
-        .media-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
+    .media-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
 
-        .file-icon {
-            transition: all 0.3s ease;
-        }
+    .file-icon {
+        transition: all 0.3s ease;
+    }
 
-        .media-card:hover .file-icon {
-            transform: scale(1.1);
-        }
+    .media-card:hover .file-icon {
+        transform: scale(1.1);
+    }
 
-        .upload-area {
-            border: 2px dashed #cbd5e1;
-            transition: all 0.3s ease;
-        }
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        transition: all 0.3s ease;
+    }
 
-        .upload-area:hover, .upload-area.drag-over {
-            border-color: #4361ee;
-            background-color: rgba(67, 97, 238, 0.05);
-        }
+    .upload-area:hover, .upload-area.drag-over {
+        border-color: #4361ee;
+        background-color: rgba(67, 97, 238, 0.05);
+    }
 
-        .hash-tag {
-            font-family: monospace;
-            background-color: #f3f4f6;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
+    .hash-tag {
+        font-family: monospace;
+        background-color: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
 
-        .table-view {
-            display: none;
-        }
+    .table-view {
+        display: none;
+    }
 
-        .grid-view {
-            display: block;
-        }
+    .grid-view {
+        display: block;
+    }
 
-        .preview-modal {
-            backdrop-filter: blur(5px);
-        }
+    .preview-modal {
+        backdrop-filter: blur(5px);
+    }
 
-        .preview-content {
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-        }
+    .preview-content {
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
 
-        #preview-container {
-            flex: 1;
-            overflow: auto;
-        }
+    #preview-container {
+        flex: 1;
+        overflow: auto;
+    }
 
+    #media-container.grid-view {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    @media (min-width: 640px) {
         #media-container.grid-view {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 6px;
-            margin-bottom: 10px;
+            grid-template-columns: repeat(2, 1fr);
         }
+    }
 
-        @media (min-width: 640px) {
-            #media-container.grid-view {
-                grid-template-columns: repeat(2, 1fr);
-            }
+    @media (min-width: 1024px) {
+        #media-container.grid-view {
+            grid-template-columns: repeat(3, 1fr);
         }
+    }
 
-        @media (min-width: 1024px) {
-            #media-container.grid-view {
-                grid-template-columns: repeat(3, 1fr);
-            }
+    @media (min-width: 1280px) {
+        #media-container.grid-view {
+            grid-template-columns: repeat(4, 1fr);
         }
+    }
 
-        @media (min-width: 1280px) {
-            #media-container.grid-view {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
+    #media-container.table-view {
+        display: block;
+    }
 
-        #media-container.table-view {
-            display: block;
-        }
+    #media-container.table-view table {
+        display: table;
+    }
 
-        #media-container.table-view table {
-            display: table;
-        }
+    #media-container.table-view .media-card {
+        display: none;
+    }
 
-        #media-container.table-view .media-card {
-            display: none;
-        }
-
-        #media-container.table-view tr.hidden-row {
-            display: none;
-        }
-    </style>
-</head>
-<body class="bg-gray-50">
+    #media-container.table-view tr.hidden-row {
+        display: none;
+    }
+</style>
+<body>
 <div class="min-h-screen">
     <!-- 导航栏 -->
     {% include "nav.html" %}
@@ -140,7 +115,7 @@
         </div>
 
         <!-- 搜索和筛选区域 -->
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <div class=" rounded-xl shadow-sm p-4 mb-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="flex-1">
                     <div class="relative max-w-md">
@@ -173,7 +148,7 @@
 
         <!-- 上传区域 -->
         <form action="/api/media/upload"
-              class="dropzone upload-area bg-white rounded-xl shadow-sm p-8 mb-8 text-center cursor-pointer transition"
+              class="dropzone upload-area  rounded-xl shadow-sm p-8 mb-8 text-center cursor-pointer transition"
               method="POST" enctype="multipart/form-data" id="myDropzone">{% csrf_token %}</form>
         <script src="/static/js/dropzone.js"></script>
         <script>
@@ -224,7 +199,7 @@
         <div id="media-container"
              class="grid-view grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
             {% for media in media_list %}
-                <div class="media-card bg-white rounded-xl shadow-sm overflow-hidden transition duration-300 cursor-pointer"
+                <div class="media-card  rounded-xl shadow-sm overflow-hidden transition duration-300 cursor-pointer"
                      data-id="{{ media.hash }}" data-target="{{ media.id }}">
                     <div class="relative">
                         <div class="h-48 bg-gradient-to-r
@@ -254,7 +229,7 @@
                                 {% endif %}
                                 text-white text-5xl"></i>
                         </div>
-                        <div class="absolute top-3 right-3 bg-white rounded-full p-1 shadow">
+                        <div class="absolute top-3 right-3  rounded-full p-1 shadow">
                             <i class="
                                 {% if '.jpg' in media.original_filename or '.jpeg' in media.original_filename or '.png' in media.original_filename %}
                                     fas fa-image text-blue-500
@@ -296,7 +271,7 @@
         </div>
 
         <!-- 表格视图 -->
-        <div id="table-view" class="table-view bg-white rounded-xl shadow-sm overflow-hidden mb-10">
+        <div id="table-view" class="table-view  rounded-xl shadow-sm overflow-hidden mb-10">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -323,7 +298,7 @@
                         </th>
                     </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class=" divide-y divide-gray-200">
                     {% for media in media_list %}
                         <tr class="media-tr" data-id="{{ media.id }}">
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -427,7 +402,7 @@
 
 
         <!-- 分页控件 -->
-        <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
+        <div class="flex items-center justify-between border-t border-gray-200  px-4 py-3 sm:px-6 rounded-b-lg">
             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
                     <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
@@ -624,7 +599,7 @@
 <div class="preview-modal fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
      id="previewModal"
      style="display: none;">
-    <div class="preview-content bg-white rounded-lg shadow-lg w-11/12 max-w-4xl">
+    <div class="preview-content  rounded-lg shadow-lg w-11/12 max-w-4xl">
         <div class="preview-header flex items-center justify-between p-4 border-b">
             <h3 class="text-lg font-semibold truncate max-w-xs" id="preview-title"></h3>
             <button id="close-preview" class="text-gray-500 hover:text-gray-700">
