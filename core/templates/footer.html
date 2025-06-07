@@ -79,28 +79,24 @@
             <p class="text-gray-600 dark:text-gray-400">
                 &copy; 2023 nblog. 保留所有权利。
             </p>
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-500">
-                当前主题: <span id="current-theme" class="font-medium">系统默认</span>
-            </p>
         </div>
     </div>
 </footer>
 
 <script>
-    // 主题切换功能
     document.addEventListener('DOMContentLoaded', function () {
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         const openIcon = document.getElementById('open-icon');
         const closeIcon = document.getElementById('close-icon');
         const themeToggle = document.getElementById('theme-toggle');
-        const currentThemeSpan = document.getElementById('current-theme');
 
-        // 移动菜单切换
-        mobileMenuBtn.addEventListener('click', () => {
+        // 移动菜单切换功能（修复版本）
+        function toggleMobileMenu() {
             const isOpen = mobileMenu.classList.contains('h-0');
 
             if (isOpen) {
+                // 打开菜单
                 mobileMenu.classList.remove('h-0');
                 mobileMenu.style.height = 'auto';
                 const height = mobileMenu.scrollHeight + 'px';
@@ -114,7 +110,9 @@
                     mobileMenu.style.height = 'auto';
                 }, 300);
             } else {
-                mobileMenu.style.height = mobileMenu.scrollHeight + 'px';
+                // 关闭菜单
+                const currentHeight = mobileMenu.scrollHeight + 'px';
+                mobileMenu.style.height = currentHeight;
 
                 // 触发重绘
                 mobileMenu.offsetHeight;
@@ -125,28 +123,32 @@
                 }, 300);
             }
 
+            // 切换图标
             openIcon.classList.toggle('hidden');
             closeIcon.classList.toggle('hidden');
-        });
+
+            // 更新aria-expanded属性
+            const expanded = openIcon.classList.contains('hidden');
+            mobileMenuBtn.setAttribute('aria-expanded', expanded);
+        }
+
+        // 统一添加事件监听器
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
 
         // 主题管理
         function applyTheme(theme) {
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
                 localStorage.setItem('theme', 'dark');
-                currentThemeSpan.textContent = '深色模式';
             } else if (theme === 'light') {
                 document.documentElement.classList.remove('dark');
                 localStorage.setItem('theme', 'light');
-                currentThemeSpan.textContent = '浅色模式';
             } else {
                 localStorage.removeItem('theme');
                 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
                     document.documentElement.classList.add('dark');
-                    currentThemeSpan.textContent = '系统深色';
                 } else {
                     document.documentElement.classList.remove('dark');
-                    currentThemeSpan.textContent = '系统浅色';
                 }
             }
         }
@@ -176,48 +178,5 @@
 
         // 初始化代码高亮
         hljs.highlightAll();
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const menuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const openIcon = document.getElementById('open-icon');
-        const closeIcon = document.getElementById('close-icon');
-        menuBtn.addEventListener('click', toggleMobileMenu);
-
-        function toggleMobileMenu() {
-            const isExpanded = mobileMenu.style.height !== '0px' && mobileMenu.style.height !== '';
-
-            // 切换菜单高度
-            if (isExpanded) {
-                mobileMenu.style.height = '0';
-            } else {
-                mobileMenu.style.height = mobileMenu.scrollHeight + 'px';
-            }
-
-            // 切换图标
-            openIcon.classList.toggle('hidden');
-            closeIcon.classList.toggle('hidden');
-
-            // 更新aria-expanded属性
-            menuBtn.setAttribute('aria-expanded', String(!isExpanded));
-        }
-
-        // 点击导航链接时添加active类
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function () {
-                document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-                this.classList.add('active');
-
-                // 如果是移动端菜单，点击后关闭菜单
-                if (this.parentElement.parentElement.id === 'mobile-menu') {
-                    mobileMenu.style.height = '0';
-                    openIcon.classList.remove('hidden');
-                    closeIcon.classList.add('hidden');
-                    menuBtn.setAttribute('aria-expanded', 'false');
-                }
-            });
-        });
     });
 </script>

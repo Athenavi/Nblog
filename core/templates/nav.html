@@ -38,8 +38,15 @@
     <style type="text/tailwindcss">
         @layer utilities {
             .nav-link {
-                @apply relative px-4 py-2 rounded-lg font-medium transition-all duration-300;
-                @apply text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100;
+                @apply relative px-4 py-2 rounded-md text-sm font-medium transition-colors;
+            }
+
+            .nav-link:not(.active) {
+                @apply text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700;
+            }
+
+            .nav-link.active {
+                @apply font-semibold bg-primary text-white dark:bg-primary-dark;
             }
 
             .nav-link::after {
@@ -52,11 +59,6 @@
                 @apply w-3/4;
             }
 
-            .nav-link.active {
-                @apply font-semibold;
-                @apply text-primary dark:text-primary-dark;
-            }
-
             .nav-link.active::after {
                 @apply w-3/4;
             }
@@ -67,8 +69,7 @@
             }
 
             .mobile-menu {
-                @apply transition-all duration-300 ease-in-out overflow-hidden;
-                @apply bg-white dark:bg-dark-800;
+                @apply overflow-hidden transition-all duration-300 ease-in-out;
             }
 
             .theme-switch {
@@ -136,29 +137,37 @@
             .prose hr {
                 @apply border-gray-200 dark:border-gray-700;
             }
-        }
 
-        .h-0 {
-            height: 0;
-            overflow: hidden;
-            transition: height 0.3s ease;
-        }
+            .h-0 {
+                height: 0;
+                overflow: hidden;
+                transition: height 0.3s ease;
+            }
 
-        .hidden {
-            display: none;
-        }
+            .hidden {
+                display: none;
+            }
 
-        body.dark {
-            @apply bg-dark-900 text-gray-100;
-        }
+            body.dark {
+                @apply bg-dark-900 text-gray-100;
+            }
 
-        body {
-            @apply bg-gray-50 text-gray-900;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
+            body {
+                @apply bg-gray-50 text-gray-900;
+                transition: background-color 0.3s ease, color 0.3s ease;
+            }
 
-        .dark-logo {
-            filter: invert(1) brightness(1.5);
+            .dark-logo {
+                filter: invert(1) brightness(1.5);
+            }
+
+            .avatar-placeholder {
+                @apply bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16;
+            }
+
+            .mobile-menu-link {
+                @apply block py-3 pl-3 border-l-2 transition-colors;
+            }
         }
     </style>
 </head>
@@ -180,9 +189,9 @@
             </div>
             <!-- 右侧区域 -->
             <div class="flex items-center space-x-4">
-                <div class="hidden md:flex space-x-1">
+                <!-- <div class="hidden md:flex space-x-1">
                     <a href="/media" class="nav-link">媒体</a>
-                </div>
+                </div> -->
 
                 <!-- 主题切换按钮 -->
                 <div class="flex items-center">
