@@ -1,71 +1,20 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>编辑文章 - nblog</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#6366f1',
-                        success: '#10b981',
-                        warning: '#f59e0b',
-                        danger: '#ef4444',
-                        dark: '#1f2937'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .markdown-toolbar {
-            background-color: #f3f4f6;
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-        }
-
-        .editor-container {
-            min-height: 400px;
-        }
-
-        .preview-container {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            min-height: 400px;
-        }
-
-        .tag {
-            transition: all 0.2s;
-        }
-
-        .tag:hover {
-            transform: translateY(-2px);
-        }
-
-        .tag-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-    </style>
-</head>
-<body class="bg-gray-50">
 <!-- 导航栏 -->
 {% include "nav.html" %}
+<style>
+    .tag {
+        transition: all 0.2s;
+    }
+
+    .tag:hover {
+        transform: translateY(-2px);
+    }
+
+    .tag-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    }
+</style>
+
 <!-- 主内容区 -->
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
     <!-- 表单区域 -->
@@ -74,7 +23,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- 左侧 - 主内容 -->
             <div class="lg:col-span-2">
-                <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="shadow rounded-lg overflow-hidden">
                     <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
                             {{ article.title }}
@@ -122,7 +71,7 @@
             <!-- 右侧 - 设置区域 -->
             <div class="lg:col-span-1">
                 <!-- 发布设置卡片 -->
-                <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+                <div class="shadow rounded-lg overflow-hidden mb-6">
                     <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
                             发布设置
@@ -170,7 +119,7 @@
                                     <i class="fas fa-heart text-red-600 text-xl">{{ article.likes }}</i>
                                 </div>
                                 <button type="button"
-                                        class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                        class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                                     <i class="far fa-eye mr-2"></i> 预览
                                 </button>
                             {% endif %}
@@ -182,7 +131,7 @@
                     </div>
                 </div>
                 <!-- 文章属性卡片 -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="shadow rounded-lg overflow-hidden">
                     <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
                             文章属性
@@ -222,7 +171,7 @@
                                         {% endif %}
                                     </span>
                                 <button type="button"
-                                        class="ml-4 inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                        class="ml-4 inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50">
                                     更换图片
                                 </button>
                             </div>
@@ -285,5 +234,3 @@
     </form>
 </div>
 {% include "footer.html" %}
-</body>
-</html>
