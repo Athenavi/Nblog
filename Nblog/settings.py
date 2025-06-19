@@ -152,3 +152,13 @@ if 'test' in sys.argv:
     CACHES['default'] = {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',  # 如果需要API令牌
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}

@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseForbidden, HttpResponse, FileResponse
@@ -490,6 +492,10 @@ def short_link_redirect(request, short_code):
     根据短码查找对应的原始URL并进行重定向（区分大小写）
     """
     try:
+        # 检查短码长度和是否包含特殊字符
+        if not (6 <= len(short_code) <= 12) or re.search(r'[^a-zA-Z0-9]', short_code):
+            return render_link_not_found(request, short_code)
+
         # 获取短链接对象（区分大小写）
         link = get_object_or_404(ShortLink, short_code=short_code)
 
@@ -550,3 +556,68 @@ def render_link_not_found(request, short_code):
         'error_code': 404
     }
     return render(request, 'shortlink/error.html', context, status=404)
+
+
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from .models import ShortLink
+from .serializers import ShortLinkCreateSerializer
+from django.urls import reverse
+
+
+class ShortLinkCreateAPIView(generics.CreateAPIView):
+    """
+    登录用户创建短链接接口
+    POST /api/short-links/
+    参数:
+      - original_url (必填): 原始URL
+      - short_code (可选): 自定义短码
+      - expires_at (可选): 过期时间
+    """
+    queryset = ShortLink.objects.all()
+    serializer_class = ShortLinkCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        short_link = serializer.save()
+
+        # 构建完整的短链接URL
+        short_url = request.build_absolute_uri(
+            reverse('short-link-redirect', kwargs={'short_code': short_link.short_code})
+        )
+
+        # 构建响应数据
+        response_data = {
+            'id': short_link.id,
+            'short_code': short_link.short_code,
+            'short_url': short_url,
+            'original_url': short_link.original_url,
+            'expires_at': short_link.expires_at.strftime('%Y-%m-%d %H:%M') if short_link.expires_at else None,
+            'created_at': short_link.created_at.strftime('%Y-%m-%d %H:%M'),
+            'message': '短链接创建成功'
+        }
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class UserShortLinkListAPIView(generics.ListAPIView):
+    """获取当前用户的短链接列表"""
+    serializer_class = ShortLinkCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ShortLink.objects.filter(user=self.request.user).order_by('-created_at')
+
+
+class ShortLinkDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    """短链接详情管理"""
+    queryset = ShortLink.objects.all()
+    serializer_class = ShortLinkCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'short_code'
+
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
