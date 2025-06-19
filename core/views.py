@@ -1,7 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import Http404, HttpResponseForbidden, HttpResponse, FileResponse
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponseForbidden, HttpResponse, FileResponse
 from django.utils.http import urlencode
 
 from .decorators import increase_blog_views
@@ -474,3 +473,80 @@ def media_delete(request, media_id):
     except Exception as e:
         # 返回一个错误响应
         return JsonResponse({'error': str(e)}, status=500)
+
+
+# views.py
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from django.views.decorators.cache import never_cache
+from .models import ShortLink
+
+
+@never_cache
+def short_link_redirect(request, short_code):
+    """
+    短链接重定向视图
+    根据短码查找对应的原始URL并进行重定向（区分大小写）
+    """
+    try:
+        # 获取短链接对象（区分大小写）
+        link = get_object_or_404(ShortLink, short_code=short_code)
+
+        # 检查链接是否有效
+        if not link.is_active:
+            return render_link_inactive(request, link)
+
+        # 检查是否过期
+        if link.expires_at and link.expires_at < timezone.now():
+            return render_link_expired(request, link)
+
+        # 增加点击计数
+        link.click_count += 1
+        link.save(update_fields=['click_count'])
+
+        # 重定向到原始URL
+        return HttpResponseRedirect(link.original_url)
+
+    except Http404:
+        # 短码不存在
+        return render_link_not_found(request, short_code)
+
+
+# 错误处理辅助函数
+def render_link_inactive(request, link):
+    """链接已禁用视图"""
+    context = {
+        'title': '链接已禁用',
+        'message': f'短链接 {link.short_code} 已被管理员禁用',
+        'created_at': link.created_at,
+        'expires_at': link.expires_at,
+        'error_code': 410
+    }
+    return render(request, 'shortlink/error.html', context, status=410)
+
+
+def render_link_expired(request, link):
+    """链接已过期视图"""
+    context = {
+        'title': '链接已过期',
+        'message': f'短链接 {link.short_code} 已于 {link.expires_at.strftime("%Y-%m-%d")} 过期',
+        'created_at': link.created_at,
+        'expires_at': link.expires_at,
+        'error_code': 410
+    }
+    return render(request, 'shortlink/error.html', context, status=410)
+
+
+def render_link_not_found(request, short_code):
+    """链接不存在视图"""
+    context = {
+        'title': '链接不存在',
+        'message': f'短链接 {short_code} 不存在或已被删除',
+        'suggestions': [
+            {'text': '检查拼写是否正确', 'icon': 'search'},
+            {'text': '联系网站管理员', 'icon': 'support'}
+        ],
+        'error_code': 404
+    }
+    return render(request, 'shortlink/error.html', context, status=404)

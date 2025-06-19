@@ -1,6 +1,7 @@
 import markdown
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db import models, transaction
+from django.utils import timezone
 
 
 class PublishedManager(models.Manager):
@@ -322,3 +323,87 @@ class Comment(models.Model):
             return comments
         except Comment.DoesNotExist:
             return None
+
+
+class ShortLink(models.Model):
+    """
+    短链接模型，用于将长URL映射为短码
+    """
+    # 短码（唯一标识，6-12个字符）
+    short_code = models.CharField(
+        max_length=12,
+        unique=True,
+        db_index=True,
+        verbose_name='短码标识'
+    )
+
+    # 原始完整URL
+    original_url = models.URLField(
+        max_length=2048,
+        verbose_name='原始URL'
+    )
+
+    # 关联的用户（可选）
+    user = models.ForeignKey(
+        'auth.User',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='创建用户'
+    )
+
+    # 关联的文章（可选）
+    blog = models.ForeignKey(
+        BlogMeta,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='关联文章'
+    )
+
+    # 创建时间
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='创建时间'
+    )
+
+    # 过期时间（可选）
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='过期时间'
+    )
+
+    # 点击计数
+    click_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='点击次数'
+    )
+
+    # 是否启用
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='是否启用'
+    )
+
+    class Meta:
+        verbose_name = '短链接'
+        verbose_name_plural = '短链接管理'
+        indexes = [
+            models.Index(fields=['short_code']),
+            models.Index(fields=['expires_at']),
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.short_code} → {self.original_url[:50]}"
+
+    def increment_click(self):
+        """增加点击计数"""
+        self.click_count = models.F('click_count') + 1
+        self.save(update_fields=['click_count'])
+
+    def is_valid(self):
+        """检查链接是否有效"""
+        now = timezone.now()
+        return self.is_active and (self.expires_at is None or self.expires_at > now)
