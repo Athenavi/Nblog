@@ -263,7 +263,7 @@ def media_upload(request):
     return HttpResponse(open('templates/blog_media.html').read())
 
 
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login, authenticate, logout
 
@@ -337,7 +337,10 @@ def edit_profile(request):
     return render(request, 'user_profile_edit.html', {'form': form})
 
 
-@login_required
+from django.views.decorators.clickjacking import xframe_options_sameorigin
+
+
+@xframe_options_sameorigin
 def media_preview(request, media_hash, media_original_filename):
     # 获取文件信息
     file_hash = get_object_or_404(FileHash, hash=media_hash)
@@ -440,7 +443,6 @@ def blog_delete(request, blog_id):
 
 
 from rest_framework.decorators import api_view
-from rest_framework.response import Response  # 使用 DRF 的 Response 类
 from .models import Comment
 from .serializers import CommentSerializer
 
@@ -482,7 +484,6 @@ from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
-from .models import ShortLink
 
 
 @never_cache

@@ -40,15 +40,15 @@
 
         <footer class="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div class="flex flex-wrap justify-between items-center mb-6">
-                <div class="flex space-x-2">
-                    <button class="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-                        <i class="fas fa-thumbs-up mr-2"></i>赞 ({{ meta.likes }})
-                    </button>
-
-                    <button class="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-                        <i class="fas fa-eye mr-2"></i>浏览 ({{ meta.views }})
-                    </button>
-                </div>
+                <button onclick="liked(`{{ aid }}`)"
+                        class="like-button bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full shadow-md transition-all duration-300 transform hover:scale-105 flex items-center mb-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                    </svg>
+                    点赞文章{{ meta.likes }}
+                </button>
                 <div class="mt-4 md:mt-0">
                     <button class="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50">
                         <i class="fas fa-share-alt mr-2"></i>分享
@@ -61,72 +61,97 @@
                 {% for tag in meta.tags|split:',' %}
                     <a href="#" class="text-sm text-primary hover:underline dark:text-primary-dark">#{{ tag }}</a>
                 {% endfor %}
+                <span class="text-sm text-gray-600 dark:text-gray-400">浏览量: </span>
+                <a href="#" class="text-sm text-primary hover:underline dark:text-primary-dark">{{ meta.views }}</a>
             </div>
         </footer>
     </article>
-</main>
+    <div id="comments_zone" class="w-full max-w-4xl rounded-xl shadow-xl p-6 mb-10">
+        <div id="comment-form">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">发表评论</h3>
+            <form id="comment-form-element" action="/blog/{{ meta.id }}/comment/" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="article-id" value="{{ meta.id }}">
+                <input type="hidden" id="reply-to" name="reply-to" value="0">
 
-<!-- 评论表单 -->
-<div id="comment-form" class="shadow rounded-lg p-6 mb-8">
-    <h3 class="text-xl font-semibold text-gray-800 mb-4">发表评论</h3>
-    <form id="comment-form-element" action="/blog/{{ meta.id }}/comment/" method="post">
-        {% csrf_token %}
-        <input type="hidden" id="article-id" value="{{ meta.id }}">
-        <input type="hidden" id="reply-to" name="reply-to" value="0">
+                <div class="mb-4">
+                    <div class="flex items-center mb-2">
+                        <div id="reply-indicator" class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded text-sm hidden">
+                            正在回复 #<span id="reply-id"></span>
+                            <button type="button" id="cancel-reply" class="text-indigo-300 hover:text-indigo-500 ml-2">
+                                <i class="fas fa-times"></i> 取消
+                            </button>
+                        </div>
+                    </div>
+                    <textarea
+                            id="comment-text"
+                            name="comment-text"
+                            rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="分享您的观点..."
+                            required
+                    ></textarea>
+                </div>
 
-        <div class="mb-4">
-            <div class="flex items-center mb-2">
-                <div id="reply-indicator" class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded text-sm hidden">
-                    正在回复 #<span id="reply-id"></span>
-                    <button type="button" id="cancel-reply" class="text-indigo-300 hover:text-indigo-500 ml-2">
-                        <i class="fas fa-times"></i> 取消
+                <div class="flex justify-end space-x-3">
+                    <button
+                            id="reset-button"
+                            type="button"
+                            class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                    >
+                        重置
+                    </button>
+                    <button
+                            id="submit-comment"
+                            type="submit"
+                            class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center"
+                    >
+                        <i class="fas fa-paper-plane mr-2"></i> 提交评论
                     </button>
                 </div>
+            </form>
+        </div>
+        <!-- 评论列表 -->
+        <div id="comments-container" class="shadow rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-comments mr-2 text-indigo-500"></i>
+                文章评论 <span id="live-comment-count">(0)</span>
+            </h3>
+
+            <div id="comments-list" class="space-y-6">
+                <div class="text-center py-8 text-gray-500" id="loading-comments">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> 正在加载评论...
+                </div>
             </div>
-            <textarea
-                    id="comment-text"
-                    name="comment-text"
-                    rows="4"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                    placeholder="分享您的观点..."
-                    required
-            ></textarea>
-        </div>
-
-        <div class="flex justify-end space-x-3">
-            <button
-                    id="reset-button"
-                    type="button"
-                    class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-            >
-                重置
-            </button>
-            <button
-                    id="submit-comment"
-                    type="submit"
-                    class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center"
-            >
-                <i class="fas fa-paper-plane mr-2"></i> 提交评论
-            </button>
-        </div>
-    </form>
-</div>
-
-<!-- 评论列表 -->
-<div id="comments-container" class="shadow rounded-lg p-6">
-    <h3 class="text-xl font-semibold text-gray-800 mb-4">
-        <i class="fas fa-comments mr-2 text-indigo-500"></i>
-        文章评论 <span id="live-comment-count">(0)</span>
-    </h3>
-
-    <div id="comments-list" class="space-y-6">
-        <div class="text-center py-8 text-gray-500" id="loading-comments">
-            <i class="fas fa-spinner fa-spin mr-2"></i> 正在加载评论...
         </div>
     </div>
-</div>
-{% include 'footer.html' %}
+</main>
+<script>
+    // 点赞功能
+    function liked(aid) {
+        const likeButton = document.querySelector('.like-button');
+        likeButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 animate-ping" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+            </svg>
+            点赞中...
+        `;
 
+        setTimeout(() => {
+            likeButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                </svg>
+                已点赞
+            `;
+            likeButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            likeButton.classList.add('bg-green-500', 'cursor-default');
+            likeButton.disabled = true;
+        }, 1000);
+    }
+</script>
+<!-- 评论表单 -->
+{% include 'footer.html' %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const articleId = document.getElementById('article-id').value;
@@ -288,7 +313,7 @@
         const formattedDate = formatDate(commentDate);
 
         const commentElement = document.createElement('div');
-        commentElement.className = 'comment-item bg-gray-50 rounded-lg p-4';
+        commentElement.className = 'comment-item rounded-lg p-4';
         commentElement.dataset.commentId = comment.id;
 
         commentElement.innerHTML = `
