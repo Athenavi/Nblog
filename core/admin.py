@@ -3,7 +3,8 @@ from .models import BlogMeta
 
 
 class BlogMetaAdmin(admin.ModelAdmin):
-    list_display = ['title', 'user', 'hidden', 'views', 'likes', 'status', 'locked', 'article_type', 'is_featured',
+    list_display = ['title', 'user', 'cover_image_tag', 'hidden', 'views', 'likes', 'status', 'locked', 'article_type',
+                    'is_featured',
                     'created_at', 'updated_at']
     list_filter = ['hidden', 'status', 'locked', 'created_at', 'updated_at']
     search_fields = ['title', 'excerpt', 'tags']
@@ -25,12 +26,16 @@ class BlogMetaAdmin(admin.ModelAdmin):
     cover_image_tag.admin_order_field = 'cover_image'
 
     fieldsets = [
-        ('基本信息', {'fields': ['title', 'user', 'cover_image_tag', 'cover_image', 'article_type', 'excerpt', 'tags',
+        ('基本信息', {'fields': ['title', 'user', 'cover_image', 'article_type', 'excerpt', 'tags',
                                  'is_featured']}),
         ('文章状态', {'fields': ['hidden', 'status', 'locked']}),
         ('统计信息', {'fields': ['views', 'likes']}),
         ('时间戳', {'fields': ['created_at', 'updated_at'], 'classes': ['collapse']}),
     ]
+
+    class Meta:
+        verbose_name = '文章'
+        verbose_name_plural = '文章元数据管理'
 
 
 admin.site.register(BlogMeta, BlogMetaAdmin)
@@ -62,6 +67,10 @@ class MediaAdmin(admin.ModelAdmin):
         # 禁止在后台删除Media对象，视情况调整
         return False
 
+    class Meta:
+        verbose_name = '媒体文件'
+        verbose_name_plural = '媒体文件管理'
+
 
 class FileHashAdmin(admin.ModelAdmin):
     list_display = ('id', 'hash', 'filename', 'created_at', 'reference_count', 'file_size', 'mime_type', 'storage_path')
@@ -80,6 +89,10 @@ class FileHashAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         # 禁止在后台删除FileHash对象，视情况调整
         return False
+
+    class Meta:
+        verbose_name = '文件'
+        verbose_name_plural = '哈希文件管理'
 
 
 admin.site.register(Media, MediaAdmin)
