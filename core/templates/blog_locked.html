@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密码输入</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+    <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+        <h1 style="color: #333333; text-align: center; margin-bottom: 20px;">此内容已被锁定</h1>
+        <form method="post" style="display: flex; flex-direction: column; align-items: center;">
+            {% csrf_token %}
+            <label for="password" style="margin-bottom: 10px; font-size: 16px;">请输入密码以访问此内容：</label>
+            <input type="password" id="password" name="password" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #cccccc; border-radius: 4px; box-sizing: border-box; font-size: 16px;">
+            <button type="submit" style="width: 100%; padding: 10px; background-color: #007bff; color: #ffffff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+                提交
+            </button>
+        </form>
+        {% if error %}
+            <p style="color: red; text-align: center; margin-top: 10px;">{{ error }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
+

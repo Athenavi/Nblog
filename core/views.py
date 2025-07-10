@@ -31,29 +31,34 @@ def index(request):
 
 @increase_blog_views
 def blog_detail(request, blog_id):
-    meta = BlogMeta.objects.get(id=blog_id)
-    locked = meta.locked
-    if locked is True:
-        if meta.user != request.user:
-            return HttpResponseForbidden('当前内容您无权访问。')
+    meta = get_object_or_404(BlogMeta, id=blog_id)
 
-    content = BlogContent.get_markdown_content(blog_id=blog_id)
+    # 处理锁定博客的密码验证
+    if meta.locked and meta.user != request.user:
+        if request.method != 'POST':
+            return render(request, 'blog_locked.html', {'meta': meta})
+
+        input_password = request.POST.get('password', '')
+        blog_content = get_object_or_404(BlogContent, blog_id=blog_id)  # 唯一查询
+
+        if input_password != blog_content.blog_password:
+            return render(request, 'blog_locked.html', {'meta': meta, 'error': '密码错误，请重试。'})
+
+        # 密码验证通过，继续流程
+    else:
+        # 非锁定或作者直接获取内容
+        blog_content = get_object_or_404(BlogContent, blog_id=blog_id)  # 唯一查询
+
+    # 统一处理内容渲染
+    content = blog_content.get_markdown_content(blog_id=blog_id)
     if not content:
         raise Http404("No such blog content")
 
-    # 获取文章评论
-    comments = Comment.objects.filter(article_id=blog_id)
-
-    # 将文章内容和评论信息传递给模板
     context = {
         'content': content,
         'meta': meta,
-        'comments': comments
+        'comments': Comment.objects.filter(article_id=blog_id)
     }
-    if request.method == 'POST':
-        # 处理评论添加
-        return comment_add(request, blog_id)
-
     return render(request, 'blog_detail.html', context)
 
 

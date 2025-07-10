@@ -146,14 +146,14 @@ class BlogContent(models.Model):
             return None
 
     @staticmethod
-    def get_markdown_content(blog_id):
+    def get_markdown_content(blog_id):  # 请确保此方法在全局仅有一处使用
         try:
-            is_safe_open = BlogMeta.objects.get(id=blog_id).status == 'Published'
-            if not is_safe_open:
-                return '<h1>文章无法查看</h1>'
-            locked = BlogMeta.objects.get(id=blog_id).locked
-            if locked:
-                return '<h1>文章已加密</h1>'
+            # is_safe_open = BlogMeta.objects.get(id=blog_id).status == 'Published'
+            # if not is_safe_open:
+            #    return '<h1>文章无法查看</h1>'
+            # locked = BlogMeta.objects.get(id=blog_id).locked
+            # if locked:
+            #    return '<h1>文章已加密</h1>'
             content = BlogContent.objects.get(blog_id=blog_id)
             return markdown.markdown(content.content, extensions=[
                 'markdown.extensions.extra',
