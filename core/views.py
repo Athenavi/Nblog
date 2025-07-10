@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseForbidden, HttpResponse, FileResponse
 from django.utils.http import urlencode
+from rest_framework.permissions import IsAuthenticated
 
 from .decorators import increase_blog_views
 from .models import BlogMeta, BlogContent
@@ -447,7 +448,7 @@ def blog_delete(request, blog_id):
     return redirect('my_blog_list')
 
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from .models import Comment
 from .serializers import CommentSerializer
 
@@ -627,3 +628,42 @@ class ShortLinkDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return super().get_queryset().filter(user=self.request.user)
+
+
+@login_required
+def create_short_link_view(request):
+    """渲染创建短链接的页面"""
+    return render(request, 'shortlink/create.html')
+
+
+# 为API视图添加装饰器使其可用于网页AJAX
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def web_create_short_link(request):
+    """
+    网页版创建短链接的API端点
+    包装原有的API视图，添加错误处理
+    """
+    # 使用已有的API视图逻辑
+    api_view = ShortLinkCreateAPIView.as_view()
+    response = api_view(request)
+
+    # 处理API响应并转换为适合网页的格式
+    if response.status_code == status.HTTP_201_CREATED:
+        return response
+
+    # 处理错误情况
+    error_data = {
+        'error': response.data.get('detail') or
+                 response.data.get('error') or
+                 '创建短链接失败'
+    }
+    return Response(error_data, status=response.status_code)
+
+
+# 用户短链接列表视图 (网页版)
+@login_required
+def user_short_links_view(request):
+    """用户短链接列表页面"""
+    short_links = ShortLink.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'shortlink/list.html', {'short_links': short_links})

@@ -1,0 +1,145 @@
+{% include "nav.html" %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <h1 class="text-3xl font-bold mb-6">创建短链接</h1>
+
+    <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+        <form id="shortLinkForm" method="post">
+            {% csrf_token %}
+
+            <!-- 原始URL输入 -->
+            <div class="mb-4">
+                <label for="original_url" class="block text-gray-700 font-medium mb-2">
+                    原始URL *
+                </label>
+                <input type="url" id="original_url" name="original_url" required
+                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="https://example.com">
+            </div>
+
+            <!-- 自定义短码 -->
+            <div class="mb-4">
+                <label for="short_code" class="block text-gray-700 font-medium mb-2">
+                    自定义短码 (可选)
+                </label>
+                <input type="text" id="short_code" name="short_code"
+                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="6-12位字母或数字">
+                <p class="text-sm text-gray-500 mt-1">留空将自动生成</p>
+            </div>
+
+            <!-- 过期时间 -->
+            <div class="mb-6">
+                <label for="expires_at" class="block text-gray-700 font-medium mb-2">
+                    过期时间 (可选)
+                </label>
+                <input type="datetime-local" id="expires_at" name="expires_at"
+                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <!-- 提交按钮 -->
+            <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                创建短链接
+            </button>
+        </form>
+    </div>
+
+    <!-- 结果展示区域 -->
+    <div id="resultContainer" class="hidden bg-green-50 border border-green-200 rounded-lg p-6">
+        <h2 class="text-xl font-bold text-green-800 mb-4">短链接创建成功！</h2>
+
+        <div class="mb-4">
+            <p class="text-gray-700 mb-1">原始URL:</p>
+            <p id="originalUrlResult" class="text-gray-900 font-mono truncate"></p>
+        </div>
+
+        <div class="mb-4">
+            <p class="text-gray-700 mb-1">短链接:</p>
+            <a id="shortUrlResult"
+               class="text-blue-600 hover:text-blue-800 font-mono break-all"
+               target="_blank"></a>
+        </div>
+
+        <div class="flex items-center">
+            <button id="copyButton"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mr-3">
+                复制链接
+            </button>
+            <a href="{% url 'short_link_list' %}"
+               class="text-gray-700 hover:text-gray-900 underline">
+                查看所有链接
+            </a>
+        </div>
+    </div>
+
+    <!-- 错误信息区域 -->
+    <div id="errorContainer" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-bold text-red-800 mb-2" id="errorTitle"></h2>
+        <p class="text-gray-700" id="errorMessage"></p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('shortLinkForm');
+        const resultContainer = document.getElementById('resultContainer');
+        const errorContainer = document.getElementById('errorContainer');
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // 重置状态
+            errorContainer.classList.add('hidden');
+            resultContainer.classList.add('hidden');
+
+            const formData = {
+                original_url: document.getElementById('original_url').value,
+                short_code: document.getElementById('short_code').value || undefined,
+                expires_at: document.getElementById('expires_at').value || undefined
+            };
+
+            try {
+                const response = await fetch('{% url "api_short_links_create" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 显示成功结果
+                    document.getElementById('originalUrlResult').textContent = data.original_url;
+                    document.getElementById('shortUrlResult').textContent = data.short_url;
+                    document.getElementById('shortUrlResult').href = data.short_url;
+                    resultContainer.classList.remove('hidden');
+                } else {
+                    // 显示错误信息
+                    document.getElementById('errorTitle').textContent = '创建失败';
+                    document.getElementById('errorMessage').textContent = data.error || '未知错误';
+                    errorContainer.classList.remove('hidden');
+                }
+            } catch (error) {
+                document.getElementById('errorTitle').textContent = '网络错误';
+                document.getElementById('errorMessage').textContent = '无法连接到服务器';
+                errorContainer.classList.remove('hidden');
+            }
+        });
+
+        // 复制功能
+        document.getElementById('copyButton').addEventListener('click', function () {
+            const url = document.getElementById('shortUrlResult').href;
+            navigator.clipboard.writeText(url).then(() => {
+                const originalText = this.textContent;
+                this.textContent = '已复制!';
+                setTimeout(() => {
+                    this.textContent = originalText;
+                }, 2000);
+            });
+        });
+    });
+</script>
+{% include "footer.html" %}
